@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.0](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/compare/v0.1.0...v0.1.0) (2023-08-15)
+
+
+### Features
+
+* **wakatime:** 实现包含列表与排除列表功能 | Implement include list and exclude list function. ([f05fe9f](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/f05fe9f757f3f70af8ee4ebe1a10260fa72e9e68))
+* **wakatime:** 添加包含列表与排除列表设置项 | Add include list and exclude list setting items. ([b36fd14](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/b36fd143190da79fcebfb4137b60d10912b5d80a))
+
 ## 0.1.0 (2023-08-15)
 
 
