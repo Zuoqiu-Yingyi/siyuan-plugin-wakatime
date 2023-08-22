@@ -33,6 +33,7 @@
     import type { IConfig } from "@/types/config";
     import type { I18N } from "@/utils/i18n";
     import WakaTimePlugin from "@/index";
+
     import CONSTANTS from "@/constants";
 
     export let config: IConfig; // 传入的配置项
