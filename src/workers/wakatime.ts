@@ -20,7 +20,6 @@ import {
     KernelError,
     type types,
 } from "@siyuan-community/siyuan-sdk";
-import manifest from "~/public/plugin.json";
 import { WorkerBridgeSlave } from "@workspace/utils/worker/bridge/slave";
 import { Logger } from "@workspace/utils/logger";
 import { trimSuffix } from "@workspace/utils/misc/string";
@@ -40,14 +39,18 @@ import type {
 import type { BlockID } from "@workspace/types/siyuan";
 import { Type } from "@/wakatime/heartbeats";
 import { sleep } from "@workspace/utils/misc/sleep";
+import type {
+    IHandlers,
+    THandlersWrapper,
+} from "@workspace/utils/worker/bridge";
 
 type INotebook = types.kernel.api.notebook.lsNotebooks.INotebook;
 
 const config: IConfig = DEFAULT_CONFIG;
-const logger = new Logger(`${self.name}-worker:wakatime`);
+const logger = new Logger(`${self.name}-worker:${CONSTANTS.WAKATIME_WORKER_FILE_NAME}`);
 const client = new Client(
     {
-        baseURL: trimSuffix(self.location.pathname, `plugins/${self.name}/workers/wakatime.js`),
+        baseURL: trimSuffix(self.location.pathname, `plugins/${self.name}/workers/${CONSTANTS.WAKATIME_WORKER_FILE_NAME}.js`),
     },
     "fetch",
 );
@@ -470,7 +473,7 @@ function washList(list: string[]): (string | RegExp)[] {
                         new RegExp(entry.slice(1, -1));
                         return true;
                     } catch (error) {
-                        client.pushErrMsg(error);
+                        client.pushErrMsg({ msg: error as string });
                         return false;
                     }
                 }
@@ -577,7 +580,7 @@ export async function addEditEvent(id: BlockID): Promise<void> {
 
         /* 获取块对应的文档信息 */
         let root_id = context.blocks.get(id);
-        let root_info = context.roots.get(root_id);
+        let root_info = root_id && context.roots.get(root_id);
         if (!root_info) {
             const block_info = await client.getBlockInfo({ id });
             root_id = block_info.data.rootID;
@@ -612,29 +615,37 @@ export async function addEditEvent(id: BlockID): Promise<void> {
 }
 
 const handlers = {
-    onload,
-    unload,
-    restart,
-    updateConfig,
-    addViewEvent,
-    addEditEvent,
+    onload: {
+        this: self,
+        func: onload,
+    },
+    unload: {
+        this: self,
+        func: unload,
+    },
+    restart: {
+        this: self,
+        func: restart,
+    },
+    updateConfig: {
+        this: self,
+        func: updateConfig,
+    },
+    addViewEvent: {
+        this: self,
+        func: addViewEvent,
+    },
+    addEditEvent: {
+        this: self,
+        func: addEditEvent,
+    },
 } as const;
 
-type THandlers = typeof handlers;
+export type THandlers = THandlersWrapper<typeof handlers>;
 
-type IThisHandlers = {
-    [K in keyof THandlers]: (
-        this: WindowOrWorkerGlobalScope,
-        ...args: Parameters<THandlers[K]>
-    ) => ReturnType<THandlers[K]>;
-}
-
-export type IHandlers = {
-    [K in keyof THandlers]: (...args: Parameters<THandlers[K]>) => ReturnType<THandlers[K]>;
-}
-
-const bridge = new WorkerBridgeSlave<IThisHandlers>(
-    handlers,
+const channel = new BroadcastChannel(CONSTANTS.WAKATIME_WORKER_BROADCAST_CHANNEL_NAME);
+const bridge = new WorkerBridgeSlave(
+    channel,
     logger,
-    self,
+    handlers,
 );
