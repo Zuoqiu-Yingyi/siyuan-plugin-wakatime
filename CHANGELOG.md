@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.3.1](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/compare/v0.3.0...v0.3.1) (2023-08-25)
+
+
+### Miscellaneous
+
+* **wakatime:** release v0.3.1 ([157fbcd](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/157fbcda7a30ac1e7da0c61f5ddeebcd5228362b))
+
+
+### Code Refactoring
+
+* **jupyter-client:** 使用 `worker` 重构 | Refactor with `worker`. ([6d4f8f5](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/6d4f8f58db95edc65e1c9b5d4fef18cb460b2639))
+* **wakatime:** 使用 `BroadcastChannel` 重构与 Worker 的通讯 | Refactor communication with Worker using `BroadcastChannel`. ([c9a9383](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/c9a9383dbb94a342d8b0888b6a73ba5ea1d020a6))
+* **wakatime:** 使用 `BroadcastChannel` 重构与 Worker 的通讯 | Refactor communication with Worker using `BroadcastChannel`. ([dd09154](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/dd09154a18f346ca0932434548c5eb42007ab19e))
+* **worker:** 重构 Worker 通讯桥 | Refactor Worker communication bridge. ([5bbaebf](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/5bbaebf18a79c3e7c57efd4899f37d3360e0a76e))
+
 ## [0.3.0](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/compare/v0.2.0...v0.3.0) (2023-08-22)
 
 
