@@ -16,6 +16,7 @@
  */
 
 import siyuan from "siyuan";
+import type { ISiyuanGlobal } from "@workspace/types/siyuan";
 
 import icon_wakatime from "./assets/symbols/icon-wakatime.symbol?raw";
 import icon_wakatime_wakapi from "./assets/symbols/icon-wakatime-wakapi.symbol?raw";
@@ -36,7 +37,7 @@ import { WorkerBridgeMaster } from "@workspace/utils/worker/bridge/master";
 import CONSTANTS from "./constants";
 import { DEFAULT_CONFIG } from "./configs/default";
 import type { IConfig } from "./types/config";
-import type { IHandlers } from "./workers/wakatime";
+import type { THandlers } from "./workers/wakatime";
 import type {
     Context,
 } from "./types/wakatime";
@@ -46,6 +47,9 @@ import type {
     ILoadedProtyleEvent,
 } from "@workspace/types/siyuan/events";
 import type { ITransaction } from "@workspace/types/siyuan/transaction";
+import { sleep } from "@workspace/utils/misc/sleep";
+
+declare var globalThis: ISiyuanGlobal;
 
 export default class WakaTimePlugin extends siyuan.Plugin {
     static readonly GLOBAL_CONFIG_NAME = "global-config";
@@ -56,11 +60,12 @@ export default class WakaTimePlugin extends siyuan.Plugin {
 
     protected readonly SETTINGS_DIALOG_ID: string;
 
-    public config: IConfig;
-    protected bridge: InstanceType<typeof WorkerBridgeMaster>; // worker 桥
+    public config: IConfig = DEFAULT_CONFIG;
+    protected worker?: InstanceType<typeof Worker>; // worker 桥
+    protected bridge?: InstanceType<typeof WorkerBridgeMaster>; // worker 桥
 
-    protected heartbeatTimer: number; // 心跳定时器
-    protected cacheCheckTimer: number; // 缓存检查定时器
+    protected heartbeatTimer: number = 0; // 心跳定时器
+    protected cacheCheckTimer: number = 0; // 缓存检查定时器
 
     constructor(options: any) {
         super(options);
@@ -87,15 +92,23 @@ export default class WakaTimePlugin extends siyuan.Plugin {
             })
             .catch(error => this.logger.error(error))
             .finally(async () => {
-                this.bridge = new WorkerBridgeMaster(
-                    this,
-                    this.logger,
-                    () => this.newId,
-                    `${globalThis.document.baseURI}plugins/${this.name}/workers/wakatime.js?v=${manifest.version}`,
-                );
+                /* 初始化 channel */
+                this.initBridge();
+                const runing = await this.isWorkerRunning();
 
-                await this.bridge.call<IHandlers["onload"]>("onload");
-                await this.updateWorkConfig();
+                if (!runing) { // worker 未正常运行
+                    /* 初始化 worker */
+                    this.initWorker();
+
+                    /* 等待 worker 正常运行 */
+                    while (await this.isWorkerRunning()) {
+                        await sleep(1_000)
+                    }
+
+                    /* 初始化 worker 配置 */
+                    await this.bridge?.call<THandlers["onload"]>("onload");
+                    await this.updateWorkerConfig();
+                }
 
                 /* 总线 */
                 this.eventBus.on("ws-main", this.webSocketMainEventListener);
@@ -116,8 +129,12 @@ export default class WakaTimePlugin extends siyuan.Plugin {
         this.eventBus.off("loaded-protyle", this.loadedProtyleEventListener);
         this.eventBus.off("click-editorcontent", this.clickEditorContentEventListener);
 
-        this.bridge.call<IHandlers["unload"]>("unload")
-            .then(() => this.bridge.terminate());
+        this.bridge
+            ?.call<THandlers["unload"]>("unload")
+            .then(() => {
+                this.bridge?.terminate();
+                this.worker?.terminate();
+            });
     }
 
     openSetting(): void {
@@ -129,7 +146,7 @@ export default class WakaTimePlugin extends siyuan.Plugin {
             height: FLAG_MOBILE ? undefined : "640px",
         });
         const settings = new Settings({
-            target: dialog.element.querySelector(`#${that.SETTINGS_DIALOG_ID}`),
+            target: dialog.element.querySelector(`#${that.SETTINGS_DIALOG_ID}`)!,
             props: {
                 config: this.config,
                 plugin: this,
@@ -157,13 +174,50 @@ export default class WakaTimePlugin extends siyuan.Plugin {
         if (config && config !== this.config) {
             this.config = config;
         }
-        await this.updateWorkConfig();
+        await this.updateWorkerConfig();
         return this.saveData(WakaTimePlugin.GLOBAL_CONFIG_NAME, this.config);
     }
 
+    /* 初始化通讯桥 */
+    protected initBridge(): void {
+        this.bridge?.terminate();
+        this.bridge = new WorkerBridgeMaster(
+            new BroadcastChannel(CONSTANTS.WAKATIME_WORKER_BROADCAST_CHANNEL_NAME),
+            this.logger,
+        );
+    }
+
+    /* 初始化 worker */
+    protected initWorker(): void {
+        this.worker?.terminate();
+        this.worker = new Worker(
+            `${globalThis.document.baseURI}plugins/${this.name}/workers/${CONSTANTS.WAKATIME_WORKER_FILE_NAME}.js?v=${manifest.version}`,
+            {
+                type: "module",
+                name: this.name,
+                credentials: "same-origin",
+            },
+        );
+    }
+
+    /* web worker 是否正在运行 */
+    protected async isWorkerRunning(): Promise<boolean> {
+        try {
+            /* 若 bridge 未初始化, 需要初始化 */
+            if (!this.bridge) this.initBridge();
+
+            /* 检测 Worker 是否已加载完成 */
+            await this.bridge!.ping();
+            return true;
+        }
+        catch (error) {
+            return false;
+        }
+    }
+
     /* 更新 worker 配置 */
-    public async updateWorkConfig(): Promise<void> {
-        await this.bridge.call<IHandlers["updateConfig"]>(
+    public async updateWorkerConfig(): Promise<void> {
+        await this.bridge?.call<THandlers["updateConfig"]>(
             "updateConfig",
             this.config,
             {
@@ -173,7 +227,7 @@ export default class WakaTimePlugin extends siyuan.Plugin {
                 language: this.wakatimeLanguage,
             },
         );
-        await this.bridge.call<IHandlers["restart"]>("restart");
+        await this.bridge?.call<THandlers["restart"]>("restart");
     }
 
     /* 总线事件监听器 */
@@ -193,7 +247,7 @@ export default class WakaTimePlugin extends siyuan.Plugin {
                     }
 
                     if (operation.id) {
-                        this.bridge.call<IHandlers["addEditEvent"]>(
+                        this.bridge?.call<THandlers["addEditEvent"]>(
                             "addEditEvent",
                             operation.id,
                         );
@@ -211,7 +265,7 @@ export default class WakaTimePlugin extends siyuan.Plugin {
         // this.logger.debug(e);
         const protyle = e.detail;
         if (protyle.notebookId && protyle.path && protyle.block.rootID) {
-            this.bridge.call<IHandlers["addViewEvent"]>(
+            this.bridge?.call<THandlers["addViewEvent"]>(
                 "addViewEvent",
                 {
                     id: protyle.block.rootID,
@@ -227,7 +281,7 @@ export default class WakaTimePlugin extends siyuan.Plugin {
         // this.logger.debug(e);
         const protyle = e.detail.protyle;
         if (protyle.notebookId && protyle.path && protyle.block.rootID) {
-            this.bridge.call<IHandlers["addViewEvent"]>(
+            this.bridge?.call<THandlers["addViewEvent"]>(
                 "addViewEvent",
                 {
                     id: protyle.block.rootID,
@@ -259,6 +313,7 @@ export default class WakaTimePlugin extends siyuan.Plugin {
 
     /* 获取一个新 ID */
     public get newId(): string {
+        // @ts-ignore
         return globalThis.Lute.NewNodeID();
     }
 
@@ -279,6 +334,7 @@ export default class WakaTimePlugin extends siyuan.Plugin {
 
     /* default hostname */
     public get wakatimeDefaultHostname(): string {
+        // @ts-ignore
         return globalThis.siyuan?.config?.system?.name
             || globalThis.process?.env?.COMPUTERNAME
             || globalThis.process?.env?.USERDOMAIN
