@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/compare/v0.3.1...v0.3.2) (2023-08-26)
+
+
+### Miscellaneous
+
+* **wakatime:** release v0.3.2 ([4d4dd19](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/4d4dd191ab405ec717395be42bc7f4f9f5adadb9))
+
 ## [0.3.1](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/compare/v0.3.0...v0.3.1) (2023-08-25)
 
 
