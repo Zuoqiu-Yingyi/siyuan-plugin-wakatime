@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.3](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/compare/v0.3.2...v0.3.3) (2023-08-27)
+
+
+### Miscellaneous
+
+* **wakatime:** release v0.3.3 ([c4c804b](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/c4c804b9e2cdc575571540ef638b9b17a34f912f))
+
+
+### Bug Fixes
+
+* 优化插件卸载时对 Worker 的处理 | Optimize the processing of Worker when the plugin is unloading. ([b35e06a](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/b35e06a440b13a1d82f0909d31328117d4355f57))
+
 ## [0.3.2](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/compare/v0.3.1...v0.3.2) (2023-08-26)
 
 
