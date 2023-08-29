@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.4](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/compare/v0.3.3...v0.3.4) (2023-08-29)
+
+
+### Miscellaneous
+
+* **wakatime:** release v0.3.4 ([1071345](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/107134583eb9bd1cf7e2f645a6e43503eb31d50e))
+
+
+### Features
+
+* **wakatime:** 监听 `loaded-protyle-dynamic` 与 `destroy-protyle` 事件 | Listen for `loaded-protyle-dynamic` and `destroy-protyle` events. ([c871379](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/c871379d5383d23e16b26ec66455730b5dd7be61))
+
 ## [0.3.3](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/compare/v0.3.2...v0.3.3) (2023-08-27)
 
 
