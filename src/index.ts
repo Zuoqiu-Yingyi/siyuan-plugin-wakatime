@@ -44,9 +44,10 @@ import type {
 import type {
     IWebSocketMainEvent,
     IClickEditorContentEvent,
-    ILoadedProtyleEvent,
+    ILoadedProtyleStaticEvent,
     ILoadedProtyleDynamicEvent,
     IDestroyProtyleEvent,
+    ISwitchProtyleEvent,
 } from "@workspace/types/siyuan/events";
 import type { ITransaction } from "@workspace/types/siyuan/transaction";
 import { sleep } from "@workspace/utils/misc/sleep";
@@ -116,8 +117,9 @@ export default class WakaTimePlugin extends siyuan.Plugin {
                 this.eventBus.on("ws-main", this.webSocketMainEventListener);
 
                 /* 编辑器加载 */
-                this.eventBus.on("loaded-protyle", this.protyleEventListener);
+                this.eventBus.on("loaded-protyle-static", this.protyleEventListener);
                 this.eventBus.on("loaded-protyle-dynamic", this.protyleEventListener);
+                this.eventBus.on("switch-protyle", this.protyleEventListener);
                 this.eventBus.on("destroy-protyle", this.protyleEventListener);
 
                 /* 编辑区点击 */
@@ -130,8 +132,9 @@ export default class WakaTimePlugin extends siyuan.Plugin {
 
     onunload(): void {
         this.eventBus.off("ws-main", this.webSocketMainEventListener);
-        this.eventBus.off("loaded-protyle", this.protyleEventListener);
+        this.eventBus.off("loaded-protyle-static", this.protyleEventListener);
         this.eventBus.off("loaded-protyle-dynamic", this.protyleEventListener);
+        this.eventBus.off("switch-protyle", this.protyleEventListener);
         this.eventBus.off("destroy-protyle", this.protyleEventListener);
         this.eventBus.off("click-editorcontent", this.clickEditorContentEventListener);
 
@@ -272,12 +275,10 @@ export default class WakaTimePlugin extends siyuan.Plugin {
     }
 
     /* 编辑器加载事件监听器 */
-    protected readonly protyleEventListener = (e: ILoadedProtyleEvent | ILoadedProtyleDynamicEvent | IDestroyProtyleEvent) => {
+    protected readonly protyleEventListener = (e: ILoadedProtyleStaticEvent | ILoadedProtyleDynamicEvent | ISwitchProtyleEvent | IDestroyProtyleEvent) => {
         // this.logger.debug(e);
 
-        const protyle = ("protyle" in e.detail)
-            ? e.detail.protyle
-            : e.detail;
+        const protyle = e.detail.protyle;
 
         if (protyle.notebookId && protyle.path && protyle.block.rootID) {
             this.bridge?.call<THandlers["addViewEvent"]>(
