@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.3.5](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/compare/v0.3.4...v0.3.5) (2023-10-31)
+
+
+### Miscellaneous
+
+* **wakatime:** release v0.3.5 ([84f62f5](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/84f62f5593bd8da44fa181a54006a547aafc52c6))
+
+
+### Features
+
+* **open-api:** 添加 `client` 与 `fs` 属性 | Add `client` and `fs` properties. ([4a8d7ad](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/4a8d7ad95aab15d4497a1cd9747561688b5a5d58))
+* 监听 `switch-protyle` 事件 | Listen for `switch-protyle` event. ([b62d2b5](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/b62d2b55296a0a27288ba2189a0d4c5575439b8b))
+
+
+### Performance Improvements
+
+* **custom-fonts:** 优化字体样式预览功能 | Optimize font style preview function. ([ade08d9](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/ade08d9fd69f81cc89ecd954e001c05e00371e71))
+* 兼容事件总线 `loaded-protyle-static` | Compatible with event bus `loaded-protyle-static`. ([0d7d052](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/0d7d052ec6ba879cc23bae7bff0990d64b8db371))
+
 ## [0.3.4](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/compare/v0.3.3...v0.3.4) (2023-08-29)
 
 
