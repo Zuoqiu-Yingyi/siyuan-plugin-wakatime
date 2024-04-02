@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.6](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/compare/v0.3.5...v0.3.6) (2024-04-02)
+
+
+### Miscellaneous
+
+* **wakatime:** 重新添加附属仓库 `wakatime` | Re-add sub-repository `wakatime`. ([ddad458](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/ddad458808c4f57029c7cefe3e3d01a108a709ab))
+
 ## [0.3.5](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/compare/v0.3.4...v0.3.5) (2023-10-31)
 
 
