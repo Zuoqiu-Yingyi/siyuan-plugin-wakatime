@@ -1,0 +1,23 @@
+src/index.ts
+  s_4a1abc01610f9a::t_38f64837ecbc76 37,380-381,402,417
+  s_4a1abc01610f9a::t_8e876f12426551 56,359,379,401,411,430,439
+  s_4a1abc01610f9a::t_a0b9d685b815b8 57-58
+src/components/Settings.svelte
+  s_4a1abc01610f9a::t_8e876f12426551 104-107,109-112,114-127
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.35-trip",
+  "base_commit_sha": "4e98a9d9db65736939a1f9357df02e8dd64e80d9",
+  "prompts": {},
+  "sessions": {
+    "s_4a1abc01610f9a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f83c1-46cb-77f1-b117-e2f184ceea0d",
+        "model": "gpt-5.5-2026-04-24"
+      },
+      "human_author": "Yingyi / 颖逸 <49649786+Zuoqiu-Yingyi@users.noreply.github.com>"
+    }
+  }
+}
