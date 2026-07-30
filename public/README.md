@@ -11,7 +11,7 @@
 [![GitHub all releases](https://img.shields.io/github/downloads/Zuoqiu-Yingyi/siyuan-plugin-wakatime/total?style=flat-square)](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/releases)
 ---
 
-[简体中文](./README_zh_CN.md) \| English
+[简体中文](./README.zh-CN.md) \| English
 
 ---
 

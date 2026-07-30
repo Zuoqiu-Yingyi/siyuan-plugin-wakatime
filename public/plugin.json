@@ -26,13 +26,13 @@
     },
     "description": {
         "default": "Use <a href='https://github.com/muety/wakapi'>Wakapi</a> or <a href='https://wakatime.com/'>WakaTime</a> to count your editing Activity",
-        "zh_CN": "使用 <a href='https://github.com/muety/wakapi'>Wakapi</a> 或 <a href='https://wakatime.com/'>WakaTime</a> 统计您的编辑活动",
-        "zh_CHT": "使用 <a href='https://github.com/muety/wakapi'>Wakapi</a> 或 <a href='https://wakatime.com/'>WakaTime</a> 統計您的編輯活動"
+        "zh-CN": "使用 <a href='https://github.com/muety/wakapi'>Wakapi</a> 或 <a href='https://wakatime.com/'>WakaTime</a> 统计您的编辑活动",
+        "zh-TW": "使用 <a href='https://github.com/muety/wakapi'>Wakapi</a> 或 <a href='https://wakatime.com/'>WakaTime</a> 統計您的編輯活動"
     },
     "readme": {
         "default": "README.md",
-        "zh_CN": "README_zh_CN.md",
-        "zh_CHT": "README_zh_CN.md"
+        "zh-CN": "README.zh-CN.md",
+        "zh-TW": "README.zh-CN.md"
     },
     "funding": {
         "openCollective": "",
