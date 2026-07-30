@@ -1,6 +1,8 @@
 {
     "packages": {
-        ".": {}
+        ".": {
+            "release-as": "0.3.6"
+        }
     },
     "prerelease": true,
     "release-type": "node",
