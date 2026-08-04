@@ -84,7 +84,7 @@ function build(mode: string): BuildOptions {
     switch (mode) {
         case "workers":
             build.lib = {
-                entry: resolve(__dirname, "src/workers/wakatime.ts"),
+                entry: resolve(import.meta.dirname, "src/workers/wakatime.ts"),
                 fileName: "wakatime",
                 formats: ["es"],
             };
@@ -94,7 +94,7 @@ function build(mode: string): BuildOptions {
         case "plugin":
         default:
             build.lib = {
-                entry: resolve(__dirname, "src/index.ts"),
+                entry: resolve(import.meta.dirname, "src/index.ts"),
                 fileName: "index",
                 formats: ["cjs"],
             };
