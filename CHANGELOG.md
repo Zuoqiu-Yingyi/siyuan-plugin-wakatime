@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.3.8](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/compare/v0.3.7...v0.3.8) (2026-08-04)
+
+
+### Miscellaneous
+
+* release v0.3.8 ([68d6d32](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/68d6d3223c2a39bbec2452903e755d73f42f9ea0))
+* **release:** bump version to 0.3.8 in package.json and plugin.json ([ed38615](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/ed3861513d0a34b621a08f8a44e95a4e42ef2ffd))
+
+
+### Continuous Integration
+
+* **build:** disable automatic installation during pnpm setup and add explicit install step ([b5ec4ba](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/b5ec4ba2206460b8c2b3ced5fda1b2b9ff4dcb95))
+
 ## 0.3.7 (2026-08-04)
 
 
