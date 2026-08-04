@@ -34,7 +34,14 @@ jobs:
           package-json-file: ./workspace/package.json
           cache-dependency-path: ./workspace/pnpm-lock.yaml
           cache: true
-          install: true
+          install: false
+
+      # Install dependencies
+      - name: Install dependencies
+        run: |
+          cd $GITHUB_WORKSPACE
+          cd ./workspace
+          pnpm install
 
       # Build package
       - name: Build package
