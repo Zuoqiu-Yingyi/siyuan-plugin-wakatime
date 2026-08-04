@@ -13,6 +13,11 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+/**
+ * Represents the category of a heartbeat.
+ * 
+ * @see {@link https://wakatime.com/developers#heartbeats}
+ */
 export enum Category {
     Coding = "coding",
     Building = "building",
@@ -23,14 +28,18 @@ export enum Category {
     WritingTests = "writing tests",
     ManualTesting = "manual testing",
     WritingDocs = "writing docs",
+    Communicating = "communicating",
     CodeReviewing = "code reviewing",
+    Notes = "notes",
     Researching = "researching",
     Learning = "learning",
     Designing = "designing",
+    AICoding = "ai coding",
 }
 
 export enum Type {
     App = "app",
     File = "file",
     Domain = "domain",
+    Url = "url",
 }

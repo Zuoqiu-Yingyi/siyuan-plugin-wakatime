@@ -100,12 +100,12 @@ async function createCacheDirectory(directory: string = CONSTANTS.OFFLINE_CACHE_
 /* 更新定时器 */
 function updateTimer(interval: number = config.wakatime.interval) {
     /* 心跳定时器 */
-    clearInterval(timer.heartbeat);
-    timer.heartbeat = window.setInterval(commit, interval * 1_000);
+    self.clearInterval(timer.heartbeat);
+    timer.heartbeat = self.setInterval(commit, interval * 1_000);
 
     /* 缓存检查定时器 */
-    clearInterval(timer.cacheCheck);
-    timer.cacheCheck = window.setInterval(checkCache, CONSTANTS.CACHE_CHECK_INTERVAL);
+    self.clearInterval(timer.cacheCheck);
+    timer.cacheCheck = self.setInterval(checkCache, CONSTANTS.CACHE_CHECK_INTERVAL);
 }
 
 /* 更新 wakatime 请求上下文 */

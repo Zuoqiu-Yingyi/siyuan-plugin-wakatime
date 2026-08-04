@@ -40,10 +40,10 @@ export const DEFAULT_CONFIG: IConfig = {
         interval: 60,
 
         view: {
-            category: Category.Browsing,
+            category: Category.Notes,
         },
         edit: {
-            category: Category.Learning,
+            category: Category.Notes,
         },
 
         system_name: "",

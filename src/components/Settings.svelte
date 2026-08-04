@@ -165,10 +165,13 @@
         { key: Category.WritingTests, text: Category.WritingTests },
         { key: Category.ManualTesting, text: Category.ManualTesting },
         { key: Category.WritingDocs, text: Category.WritingDocs },
+        { key: Category.Communicating, text: Category.Communicating },
         { key: Category.CodeReviewing, text: Category.CodeReviewing },
+        { key: Category.Notes, text: Category.Notes },
         { key: Category.Researching, text: Category.Researching },
         { key: Category.Learning, text: Category.Learning },
         { key: Category.Designing, text: Category.Designing },
+        { key: Category.AICoding, text: Category.AICoding },
     ];
 </script>
 
