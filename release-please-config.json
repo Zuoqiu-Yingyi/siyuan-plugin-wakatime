@@ -1,7 +1,7 @@
 {
     "packages": {
         ".": {
-            "release-as": "0.3.7"
+            "release-as": "0.3.8"
         }
     },
     "prerelease": true,
