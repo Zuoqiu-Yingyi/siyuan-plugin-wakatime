@@ -55,7 +55,7 @@ function build(mode: string): BuildOptions {
             ],
             output: {
                 entryFileNames: (chunkInfo) => {
-                    console.log(chunkInfo);
+                    // console.log(chunkInfo);
                     switch (chunkInfo.name) {
                         case "index":
                             return "[name].js";

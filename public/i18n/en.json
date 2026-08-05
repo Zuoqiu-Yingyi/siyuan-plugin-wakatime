@@ -1,4 +1,9 @@
 {
+    "menu": {
+        "switch": {
+            "title": "WakaTime record activity information"
+        }
+    },
     "displayName": "WakaTime",
     "settings": {
         "generalSettings": {

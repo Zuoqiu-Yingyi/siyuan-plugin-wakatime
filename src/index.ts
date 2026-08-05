@@ -70,6 +70,7 @@ export default class WakaTimePlugin extends siyuan.Plugin {
 
     public config: IConfig = DEFAULT_CONFIG;
     protected kernelPluginReady = false;
+    protected topBarButton?: HTMLElement; // 顶部菜单栏按钮
 
     constructor(options: any) {
         super(options);
@@ -116,6 +117,13 @@ export default class WakaTimePlugin extends siyuan.Plugin {
     }
 
     public override onLayoutReady(): void {
+        /* 添加活动记录功能开关 */
+        this.topBarButton = this.addTopBar({
+            icon: "icon-wakatime",
+            title: this.i18n.menu.switch.title,
+            position: "right",
+            callback: this.toggleRecordState,
+        });
     }
 
     public override onunload(): void {
@@ -170,6 +178,7 @@ export default class WakaTimePlugin extends siyuan.Plugin {
         if (config && config !== this.config) {
             this.config = config;
         }
+        this.updateTopBarButtonState();
         await this.updateWorkerConfig();
         return this.saveData(WakaTimePlugin.GLOBAL_CONFIG_NAME, this.config);
     }
@@ -178,6 +187,27 @@ export default class WakaTimePlugin extends siyuan.Plugin {
     public async updateWorkerConfig(): Promise<void> {
         await this.kernel.rpc.call.updateConfig?.(this.config);
     }
+
+    /**
+     * 更新顶部菜单栏按钮状态
+     */
+    protected updateTopBarButtonState(): void {
+        if (this.topBarButton) {
+            const record = this.config.wakatime.record;
+
+            /* 更改顶部菜单栏按钮文本 */
+            // this.topBarButton.ariaLabel = this.i18n.menu.switch.title;
+
+            /* 更改顶部菜单栏按钮状态 */
+            this.topBarButton.classList.toggle("toolbar__item--active", record);
+        }
+    }
+
+    /* 切换活动记录状态 */
+    protected readonly toggleRecordState = () => {
+        this.config.wakatime.record = !this.config.wakatime.record;
+        this.updateConfig();
+    };
 
     /* 总线事件监听器 */
     protected readonly webSocketMainEventListener = (e: IWebSocketMainEvent) => {
