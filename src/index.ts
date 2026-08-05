@@ -22,10 +22,8 @@ import {
 } from "@workspace/utils/env/front-end";
 import { Logger } from "@workspace/utils/logger";
 import { mergeIgnoreArray } from "@workspace/utils/misc/merge";
-import { sleep } from "@workspace/utils/misc/sleep";
 import { parse } from "@workspace/utils/path/browserify";
 import { normalize } from "@workspace/utils/path/normalize";
-import { WorkerBridgeMaster } from "@workspace/utils/worker/bridge/master";
 
 import manifest from "~/public/plugin.json";
 
@@ -51,7 +49,6 @@ import type { IConfig } from "./types/config";
 import type {
     Context,
 } from "./types/wakatime";
-import type { THandlers } from "./workers/wakatime";
 
 const siyuanGlobal = globalThis as ISiyuanGlobal;
 // eslint-disable-next-line node/prefer-global/process
@@ -70,11 +67,7 @@ export default class WakaTimePlugin extends siyuan.Plugin {
     protected readonly SETTINGS_DIALOG_ID: string;
 
     public config: IConfig = DEFAULT_CONFIG;
-    protected worker?: InstanceType<typeof Worker>; // worker 桥
-    protected bridge?: InstanceType<typeof WorkerBridgeMaster>; // worker 桥
-
-    protected heartbeatTimer: number = 0; // 心跳定时器
-    protected cacheCheckTimer: number = 0; // 缓存检查定时器
+    protected kernelPluginReady = false;
 
     constructor(options: any) {
         super(options);
@@ -101,23 +94,8 @@ export default class WakaTimePlugin extends siyuan.Plugin {
             })
             .catch((error) => this.logger.error(error))
             .finally(async () => {
-                /* 初始化 channel */
-                this.initBridge();
-                const running = await this.isWorkerRunning();
-
-                if (!running) { // worker 未正常运行
-                    /* 初始化 worker */
-                    this.initWorker();
-
-                    /* 等待 worker 正常运行 */
-                    while (await this.isWorkerRunning()) {
-                        await sleep(1_000);
-                    }
-
-                    /* 初始化 worker 配置 */
-                    await this.bridge?.call<THandlers["onload"]>("onload");
-                    await this.updateWorkerConfig();
-                }
+                /* 监听内核插件状态变化, 进入 running 后初始化 */
+                this.eventBus.on("kernel-plugin-state-change", this.onKernelPluginStateChange);
 
                 /* 总线 */
                 this.eventBus.on("ws-main", this.webSocketMainEventListener);
@@ -137,6 +115,7 @@ export default class WakaTimePlugin extends siyuan.Plugin {
     }
 
     public override onunload(): void {
+        this.eventBus.off("kernel-plugin-state-change", this.onKernelPluginStateChange);
         this.eventBus.off("ws-main", this.webSocketMainEventListener);
         this.eventBus.off("loaded-protyle-static", this.protyleEventListener);
         this.eventBus.off("loaded-protyle-dynamic", this.protyleEventListener);
@@ -144,17 +123,7 @@ export default class WakaTimePlugin extends siyuan.Plugin {
         this.eventBus.off("destroy-protyle", this.protyleEventListener);
         this.eventBus.off("click-editorcontent", this.clickEditorContentEventListener);
 
-        if (this.worker) {
-            this.bridge
-                ?.call<THandlers["unload"]>("unload")
-                .then(() => {
-                    this.bridge?.terminate();
-                    this.worker?.terminate();
-                });
-        }
-        else {
-            this.bridge?.terminate();
-        }
+        void (this.kernel.rpc.call.unload as any)();
     }
 
     public override openSetting(): void {
@@ -203,48 +172,17 @@ export default class WakaTimePlugin extends siyuan.Plugin {
     }
 
     /* 初始化通讯桥 */
-    protected initBridge(): void {
-        this.bridge?.terminate();
-        this.bridge = new WorkerBridgeMaster(
-            new BroadcastChannel(CONSTANTS.WAKATIME_WORKER_BROADCAST_CHANNEL_NAME),
-            this.logger,
-        );
-    }
-
-    /* 初始化 worker */
-    protected initWorker(): void {
-        this.worker?.terminate();
-        this.worker = new Worker(
-            `${globalThis.document.baseURI}plugins/${this.name}/workers/${CONSTANTS.WAKATIME_WORKER_FILE_NAME}.js?v=${manifest.version}`,
-            {
-                type: "module",
-                name: this.name,
-                credentials: "include",
-            },
-        );
-    }
-
-    /* web worker 是否正在运行 */
-    protected async isWorkerRunning(): Promise<boolean> {
-        try {
-            /* 若 bridge 未初始化, 需要初始化 */
-            if (!this.bridge)
-                this.initBridge();
-
-            /* 检测 Worker 是否已加载完成 */
-            await this.bridge!.ping();
-            return true;
+    protected onKernelPluginStateChange = async (e: { detail: { code: number; description: string } }): Promise<void> => {
+        if (e.detail.code === 2 && !this.kernelPluginReady) { // running
+            this.kernelPluginReady = true;
+            await (this.kernel.rpc.call.onload as any)();
+            await this.updateWorkerConfig();
         }
-        catch (error) {
-            void error;
-            return false;
-        }
-    }
+    };
 
-    /* 更新 worker 配置 */
+    /* 更新内核插件配置 */
     public async updateWorkerConfig(): Promise<void> {
-        await this.bridge?.call<THandlers["updateConfig"]>(
-            "updateConfig",
+        await (this.kernel.rpc.call.updateConfig as any)(
             this.config,
             {
                 url: this.wakatimeHeartbeatsApiUrl,
@@ -253,7 +191,7 @@ export default class WakaTimePlugin extends siyuan.Plugin {
                 language: this.wakatimeLanguage,
             },
         );
-        await this.bridge?.call<THandlers["restart"]>("restart");
+        await (this.kernel.rpc.call.restart as any)();
     }
 
     /* 总线事件监听器 */
@@ -279,10 +217,7 @@ export default class WakaTimePlugin extends siyuan.Plugin {
                         case "setAttrs":
                         case "doUpdateUpdated":
                             if (operation.id) {
-                                this.bridge?.call<THandlers["addEditEvent"]>(
-                                    "addEditEvent",
-                                    operation.id,
-                                );
+                                void (this.kernel.rpc.call.addEditEvent as any)(operation.id);
                             }
                             break;
                         case "delete": // 忽略删除操作 (避免无法查询块信息)
@@ -304,14 +239,7 @@ export default class WakaTimePlugin extends siyuan.Plugin {
         const protyle = e.detail.protyle;
 
         if (protyle.notebookId && protyle.path && protyle.block.rootID) {
-            this.bridge?.call<THandlers["addViewEvent"]>(
-                "addViewEvent",
-                {
-                    id: protyle.block.rootID,
-                    box: protyle.notebookId,
-                    path: protyle.path,
-                },
-            );
+            void (this.kernel.rpc.call.addViewEvent as any)(protyle.block.rootID);
         }
     };
 
@@ -320,14 +248,7 @@ export default class WakaTimePlugin extends siyuan.Plugin {
         // this.logger.debug(e);
         const protyle = e.detail.protyle;
         if (protyle.notebookId && protyle.path && protyle.block.rootID) {
-            this.bridge?.call<THandlers["addViewEvent"]>(
-                "addViewEvent",
-                {
-                    id: protyle.block.rootID,
-                    box: protyle.notebookId,
-                    path: protyle.path,
-                },
-            );
+            void (this.kernel.rpc.call.addViewEvent as any)(protyle.block.rootID);
         }
     };
 
