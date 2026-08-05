@@ -56,6 +56,9 @@ function build(mode: string): BuildOptions {
             output: {
                 entryFileNames: (chunkInfo) => {
                     // console.log(chunkInfo);
+                    if (chunkInfo.facadeModuleId?.includes("/src/kernel/")) {
+                        return "kernel.js";
+                    }
                     switch (chunkInfo.name) {
                         case "index":
                             return "[name].js";
@@ -86,6 +89,15 @@ function build(mode: string): BuildOptions {
             build.lib = {
                 entry: resolve(import.meta.dirname, "src/workers/wakatime.ts"),
                 fileName: "wakatime",
+                formats: ["es"],
+            };
+            build.emptyOutDir = false;
+            break;
+
+        case "kernel":
+            build.lib = {
+                entry: resolve(import.meta.dirname, "src/kernel/index.ts"),
+                fileName: "kernel",
                 formats: ["es"],
             };
             build.emptyOutDir = false;
