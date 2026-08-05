@@ -1,0 +1,26 @@
+src/wakatime/cache.ts
+  s_f872ffe1c991ea::t_8c88b95a9c6729 222-223,225
+  s_f872ffe1c991ea::t_eef92ee412ade0 28-34,39
+  s_f872ffe1c991ea::t_4d1c90e723b97f 290
+  s_f872ffe1c991ea::t_d5ac45b8af2fd7 65
+  s_f872ffe1c991ea::t_5a7f51d2810557 114-115
+  s_f872ffe1c991ea::t_88c2de0649b935 35-38
+  s_f872ffe1c991ea::t_1c6c4bcac0165b 102-103
+  s_f872ffe1c991ea::t_685c6943cf088c 240-241,243
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.39-trip",
+  "base_commit_sha": "cc92ea92f2a12ccb74d7c763cb5ad8bdc9657edc",
+  "prompts": {},
+  "sessions": {
+    "s_f872ffe1c991ea": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "716e2c4d-e980-404e-afd4-431e03bd92b1",
+        "model": "claude-glm-5.2"
+      },
+      "human_author": "Yingyi / 颖逸 <49649786+Zuoqiu-Yingyi@users.noreply.github.com>"
+    }
+  }
+}
