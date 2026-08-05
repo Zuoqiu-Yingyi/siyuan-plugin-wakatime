@@ -3,7 +3,7 @@
     "settings": {
         "generalSettings": {
             "cleanCache": {
-                "description": "刪除所有離線緩存文件（刪除後將刷新頁面）",
+                "description": "刪除所有離線緩存文件",
                 "text": "清理",
                 "title": "清理離線緩存"
             },

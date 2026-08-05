@@ -28,7 +28,7 @@ import type { BlockID } from "@workspace/types/siyuan";
 
 import type { IConfig } from "@/types/config";
 import type { Context, Heartbeats } from "@/types/wakatime";
-import type { IStorageBackend, TCacheDatum } from "@/wakatime/cache";
+import type { IStorageBackend, TCacheData } from "@/wakatime/cache";
 
 interface INotebook {
     id: string;
@@ -48,7 +48,7 @@ class KernelWakaTime {
 
     private readonly notebook = new Map<BlockID, INotebook>(); // 笔记本 ID => 笔记本信息
 
-    private readonly cache: WakaTimeCache<TCacheDatum>;
+    private readonly cache: WakaTimeCache<TCacheData>;
 
     private readonly timer = {
         /**
@@ -65,14 +65,7 @@ class KernelWakaTime {
     private readonly context: Context.IContext = {
         url: "",
         method: "POST",
-        headers: {
-            "Authorization": "",
-            "User-Agent": "",
-            "X-Machine-Name": "",
-        },
-
-        project: "",
-        language: "",
+        Authorization: "",
 
         includeID: [],
         excludeID: [],
@@ -81,7 +74,6 @@ class KernelWakaTime {
 
         blocks: new Map<BlockID, BlockID>(),
         roots: new Map<BlockID, Context.IRoot>(),
-        actions: new Array<Heartbeats.IAction>(),
     };
 
     constructor() {
@@ -93,6 +85,7 @@ class KernelWakaTime {
         // 绑定生命周期钩子。
         // Wire lifecycle hooks.
         this.siyuan.plugin.lifecycle.onload = this.onload.bind(this);
+        this.siyuan.plugin.lifecycle.onrunning = this.onrunning.bind(this);
         this.siyuan.plugin.lifecycle.onunload = this.onunload.bind(this);
     }
 
@@ -103,17 +96,21 @@ class KernelWakaTime {
      * data/storage/petal/<plugin-name>/.
      */
     private readonly siyuanStorageBackend: IStorageBackend = {
-        putFile: (path, content) => this.siyuan.storage.put(path, content),
+        putFile: async (path, content) => {
+            await this.siyuan.storage.put(path, content);
+        },
         getFile: async (path) => {
             const obj = await this.siyuan.storage.get(path);
-            return obj.text();
+            const content = await obj.text();
+            return content;
         },
         readDir: async (path) => {
-            const dir: `/${string}` = path.startsWith("/") ? path as `/${string}` : `/${path}`;
-            const entries = await this.siyuan.storage.list(dir);
+            const entries = await this.siyuan.storage.list(path);
             return entries.map((e) => ({ name: e.name, isDir: e.isDir }));
         },
-        removeFile: (path) => this.siyuan.storage.remove(path),
+        removeFile: async (path) => {
+            await this.siyuan.storage.remove(path);
+        },
     };
 
     /**
@@ -137,12 +134,12 @@ class KernelWakaTime {
      * Forwards an outbound HTTP request via /api/network/forwardProxy.
      */
     private async forwardProxy(request: Heartbeats.IRequest): Promise<{ status: number; body: string }> {
-        const resp = await this.siyuan.client.fetch("/api/network/forwardProxy", {
+        const response = await this.siyuan.client.fetch("/api/network/forwardProxy", {
             method: "POST",
             body: JSON.stringify({
                 url: request.url,
                 method: request.method,
-                headers: [request.headers],
+                headers: request.headers,
                 timeout: request.timeout,
                 payload: request.payload,
                 contentType: "application/json",
@@ -150,7 +147,7 @@ class KernelWakaTime {
                 responseEncoding: "text",
             }),
         });
-        const data = await resp.json() as {
+        const data = await response.json() as {
             code: number;
             msg: string;
             data: { status: number; body: string };
@@ -169,6 +166,9 @@ class KernelWakaTime {
 
     /* 启动定时器 */
     private startTimer(interval: number = this.config.wakatime.interval): void {
+        this.commit();
+        this.checkCache();
+
         this.timer.heartbeat = setInterval(() => void this.commit(), interval * 1_000) as unknown as number;
         this.timer.cacheCheck = setInterval(() => void this.checkCache(), CONSTANTS.CACHE_CHECK_INTERVAL) as unknown as number;
     }
@@ -178,13 +178,23 @@ class KernelWakaTime {
         try {
             const obj = await this.siyuan.storage.get(CONSTANTS.GLOBAL_CONFIG_NAME);
             const config = await obj.json();
-            Object.assign(this.config, config);
+            this.updateConfig(config);
         }
-        catch {}
+        catch { }
+    }
+
+    /* 更新 wakatime 配置 */
+    private updateConfig(config: IConfig): void {
+        Object.assign(this.config, config);
+        this.updateContext();
     }
 
     /* 更新 wakatime 请求上下文 */
     private updateContext(): void {
+        this.context.url = `${this.config?.wakatime?.api_url ?? CONSTANTS.WAKATIME_DEFAULT_API_URL}/${CONSTANTS.WAKATIME_HEARTBEATS_PATHNAME}`;
+        // eslint-disable-next-line node/prefer-global/buffer
+        this.context.Authorization = `Basic ${Buffer.from(this.config.wakatime.api_key).toString("base64")}`;
+
         this.context.includeID = this.washList(this.config.wakatime.includeID);
         this.context.excludeID = this.washList(this.config.wakatime.excludeID);
 
@@ -226,11 +236,11 @@ class KernelWakaTime {
                 );
             });
 
-        const actions = await this.buildHeartbeats(valid_roots);
+        const datum = await this.buildHeartbeats(valid_roots);
 
         /* 在 entity 中进行过滤 */
-        const valid_actions = actions
-            .filter((action) => {
+        datum.forEach((data) => {
+            data.payload = data.payload.filter((action) => {
                 const entity = action.entity;
                 return this.filter(
                     entity,
@@ -238,38 +248,45 @@ class KernelWakaTime {
                     this.context.exclude,
                 );
             });
+        });
 
-        this.context.actions.push(...valid_actions);
-
-        if (this.context.actions.length > 0) {
-            const actions = this.context.actions.slice(); // 数组浅拷贝
-            this.context.actions.length = 0;
-
-            /* 构造心跳连接请求 */
-            const requests: Heartbeats.IRequest[] = [];
-            for (let i = 0; i < actions.length; i += CONSTANTS.WAKATIME_HEARTBEATS_BULK) {
-                // WakaTime 限制一次最多提交 25 条记录
-                requests.push(this.buildHeartbeatsRequest(actions.slice(i, i + CONSTANTS.WAKATIME_HEARTBEATS_BULK)));
-            }
-
-            if (this.config.wakatime.heartbeats) { // 提交数据
-                for (const request of requests) {
-                    await this.sendHeartbeats(
-                        request,
-                        (request) => {
-                            if (this.config.wakatime.offline) {
-                                this.cache.push(request.payload);
-                            }
-                        },
-                    ); // 发送载荷
+        for (const data of datum) {
+            if (data.payload.length > 0) {
+                /* 构造心跳连接请求 */
+                const requests: Heartbeats.IRequest[] = [];
+                for (let i = 0; i < data.payload.length; i += CONSTANTS.WAKATIME_HEARTBEATS_BULK) {
+                    // WakaTime 限制一次最多提交 25 条记录
+                    requests.push(this.buildHeartbeatsRequest({
+                        context: data.context,
+                        payload: data.payload.slice(i, i + CONSTANTS.WAKATIME_HEARTBEATS_BULK),
+                    }));
                 }
-            }
-            else { // 不提交数据
-                if (this.config.wakatime.offline) { // 若开启离线缓存
-                    this.cache.push(...requests.map((request) => request.payload)); // 写入缓存
+
+                if (this.config.wakatime.heartbeats) { // 提交数据
+                    for (const request of requests) {
+                        await this.sendHeartbeats(
+                            request,
+                            (request) => {
+                                if (this.config.wakatime.offline) {
+                                    this.cache.push({
+                                        context: data.context,
+                                        payload: request.payload,
+                                    });
+                                }
+                            },
+                        ); // 发送载荷
+                    }
                 }
+                else { // 不提交数据
+                    if (this.config.wakatime.offline) { // 若开启离线缓存
+                        this.cache.push(...requests.map((request) => ({
+                            context: data.context,
+                            payload: request.payload,
+                        }))); // 写入缓存
+                    }
+                }
+                await this.cache.save(); // 缓存持久化
             }
-            await this.cache.save(); // 缓存持久化
         }
     }
 
@@ -290,16 +307,21 @@ class KernelWakaTime {
 
             await cache.load(); // 加载缓存文件
 
-            const exceptions: TCacheDatum[] = []; // 提交缓存时发生异常
+            const exceptions: TCacheData[] = []; // 提交缓存时发生异常
 
             /* 依次提交缓存内容 */
             for (let index = 0; index < cache.length; ++index) {
-                const payload = cache.at(index)!;
+                const data = cache.at(index)!;
 
                 /* 提交缓存 */
                 await this.sendHeartbeats(
-                    this.buildHeartbeatsRequest(payload),
-                    (request) => exceptions.push(request.payload),
+                    this.buildHeartbeatsRequest(data),
+                    (request) => {
+                        exceptions.push({
+                            context: data.context,
+                            payload: request.payload,
+                        });
+                    },
                 );
 
                 if (index === 0 && exceptions.length > 0) {
@@ -346,9 +368,8 @@ class KernelWakaTime {
             box: BlockID;
             path: string;
         },
-        time: number,
-        is_write: boolean,
-    ): Promise<Heartbeats.IAction> {
+        event: Context.IEvent,
+    ): Promise<TCacheData> {
         const branch = this.config.wakatime.hide_branch_names
             ? doc.box
             : this.notebook.get(doc.box)?.name;
@@ -363,17 +384,20 @@ class KernelWakaTime {
             ))}.sy`;
 
         return {
-            type: Type.File,
-            category: is_write
-                ? this.config.wakatime.edit.category
-                : this.config.wakatime.view.category,
+            payload: [{
+                type: Type.File,
+                category: event.is_write
+                    ? this.config.wakatime.edit.category
+                    : this.config.wakatime.view.category,
 
-            project: this.context.project,
-            branch,
-            entity,
-            language: this.context.language,
-            time,
-            is_write,
+                project: event.context.project,
+                branch,
+                entity,
+                language: event.context.language,
+                time: event.time,
+                is_write: event.is_write,
+            }],
+            context: event.context,
         };
     }
 
@@ -382,32 +406,49 @@ class KernelWakaTime {
      * @param roots - 文档信息
      * @returns 心跳连接活动
      */
-    private async buildHeartbeats(roots: Context.IRoot[]): Promise<Heartbeats.IAction[]> {
-        return Promise.all(roots.flatMap((root) => {
+    private async buildHeartbeats(roots: Context.IRoot[]): Promise<TCacheData[]> {
+        const datum = await Promise.all(roots.flatMap((root) => {
             return root.events.map((event) => this.buildHeartbeat(
                 root,
-                event.time,
-                event.is_write,
+                event,
             ));
         }));
+        const map = new Map<string, TCacheData>();
+        datum.forEach((d) => {
+            const key = `${d.context.hostname}\0${d.context.useragent}`;
+            let data = map.get(key);
+            if (data == null) {
+                data = {
+                    payload: [],
+                    context: d.context,
+                };
+                map.set(key, data);
+            }
+            data.payload.push(...d.payload);
+        });
+        return Array.from(map.values());
     }
 
     /**
      * 构造心跳连接请求
-     * @param payload - - 心跳连接载荷
+     * @param payload - 心跳连接载荷
      * @returns 心跳连接请求
      */
-    private buildHeartbeatsRequest(payload: Heartbeats.IAction | Heartbeats.IAction[]): Heartbeats.IRequest {
+    private buildHeartbeatsRequest(data: TCacheData): Heartbeats.IRequest {
         const request: Heartbeats.IRequest = {
-            url: Array.isArray(payload)
+            url: Array.isArray(data.payload)
                 ? `${this.context.url}.bulk`
                 : this.context.url,
             method: this.context.method,
             headers: [
-                this.context.headers,
+                {
+                    "Authorization": this.context.Authorization,
+                    "User-Agent": data.context.useragent,
+                    "X-Machine-Name": data.context.hostname,
+                },
             ],
             timeout: this.config.wakatime.timeout * 1_000,
-            payload,
+            payload: data.payload,
         };
         return request;
     }
@@ -501,7 +542,7 @@ class KernelWakaTime {
                             return true;
                         }
                         catch (error) {
-                            void this.siyuan.logger.warn(error as string);
+                            void error;
                             return false;
                         }
                     }
@@ -528,6 +569,7 @@ class KernelWakaTime {
             const event: Context.IEvent = {
                 time: options.time,
                 is_write: options.is_write,
+                context: options.context,
             };
 
             /* 如果上一个事件为同类型的事件, 替换该事件 */
@@ -544,17 +586,12 @@ class KernelWakaTime {
                 events: [{
                     time: options.time,
                     is_write: options.is_write,
+                    context: options.context,
                 }],
             };
             this.context.roots.set(options.id, root);
         }
         return root;
-    }
-
-    /* 创建缓存目录 */
-    private async createCacheDirectory(directory: string = CONSTANTS.KERNEL_CACHE_PATH): Promise<void> {
-        /* storage.put 会自动创建父目录, 写一个占位文件确保目录存在 */
-        await this.siyuan.storage.put(`${directory}/.gitkeep`, "");
     }
 
     /* 获取块信息 */
@@ -593,47 +630,36 @@ class KernelWakaTime {
         /* 加载配置 */
         await this.loadConfig();
 
-        /* 创建缓存目录 */
-        await this.createCacheDirectory();
-
         /* 加载缓存数据 */
         await this.cache.load();
 
         /* 更新笔记本列表 */
         await this.updateNotebook();
 
+        /* 启动定时器 */
+        this.startTimer();
+
         /* 绑定 RPC 方法 */
-        await this.siyuan.rpc.bind("onload", this.rpcOnload.bind(this), "Initialize the wakatime kernel plugin.");
-        await this.siyuan.rpc.bind("unload", this.rpcUnload.bind(this), "Stop the wakatime kernel plugin.");
+        await this.siyuan.rpc.bind("clearCache", this.rpcClearCache.bind(this), "Clear the offline cache.");
         await this.siyuan.rpc.bind("updateConfig", this.rpcUpdateConfig.bind(this), "Update config and request context.");
         await this.siyuan.rpc.bind("updateNotebooks", this.rpcUpdateNotebooks.bind(this), "Update the list of notebooks.");
         await this.siyuan.rpc.bind("addViewEvent", this.rpcAddViewEvent.bind(this), "Record a view heartbeat (id only).");
         await this.siyuan.rpc.bind("addEditEvent", this.rpcAddEditEvent.bind(this), "Record an edit heartbeat (id only).");
     }
 
+    /* 运行中 */
+    private async onrunning(): Promise<void> { }
+
     /* 卸载 */
     private async onunload(): Promise<void> {
         this.clearTimer();
         await this.commit();
 
-        await this.siyuan.rpc.unbind("onload");
-        await this.siyuan.rpc.unbind("unload");
+        await this.siyuan.rpc.unbind("clearCache");
         await this.siyuan.rpc.unbind("updateConfig");
         await this.siyuan.rpc.unbind("updateNotebooks");
         await this.siyuan.rpc.unbind("addViewEvent");
         await this.siyuan.rpc.unbind("addEditEvent");
-    }
-
-    /* RPC: onload — 由前端在内核进入 running 状态后调用 */
-    private async rpcOnload(): Promise<void> {
-        /* 缓存目录与数据已在内核 onload 生命周期创建/加载, 此处补一次 notebook 刷新 */
-        await this.updateNotebook();
-    }
-
-    /* RPC: unload */
-    private async rpcUnload(): Promise<void> {
-        this.clearTimer();
-        await this.commit();
     }
 
     /* RPC: updateNotebooks */
@@ -641,20 +667,21 @@ class KernelWakaTime {
         await this.updateNotebook();
     }
 
+    /* RPC: clearCache */
+    private async rpcClearCache(): Promise<void> {
+        this.cache.clear();
+        await this.siyuan.storage.remove(CONSTANTS.KERNEL_CACHE_PATH);
+    }
+
     /* RPC: updateConfig */
-    private rpcUpdateConfig(
-        config: IConfig,
-        context: Pick<Context.IContext, "headers" | "language" | "project" | "url">,
-    ): void {
+    private async rpcUpdateConfig(config: IConfig): Promise<void> {
         this.clearTimer();
-        Object.assign(this.config, config);
-        Object.assign(this.context, context);
-        this.updateContext();
+        this.updateConfig(config);
         this.startTimer();
     }
 
     /* RPC: addViewEvent — 与 addEditEvent 统一, 只传 id, 内核内部解析块信息 */
-    private async rpcAddViewEvent(id: BlockID): Promise<void> {
+    private async rpcAddViewEvent(id: BlockID, context: Context.IEventContext): Promise<void> {
         const root_info = await this.getBlockInfo(id);
         if (root_info != null) {
             const time = this.now();
@@ -664,12 +691,13 @@ class KernelWakaTime {
                 path: root_info.path,
                 time,
                 is_write: false,
+                context,
             });
         }
     }
 
     /* RPC: addEditEvent */
-    private async rpcAddEditEvent(id: BlockID): Promise<void> {
+    private async rpcAddEditEvent(id: BlockID, context: Context.IEventContext): Promise<void> {
         const root_info = await this.getBlockInfo(id);
         if (root_info != null) {
             const time = this.now();
@@ -679,6 +707,7 @@ class KernelWakaTime {
                 path: root_info.path,
                 time,
                 is_write: true,
+                context,
             });
         }
     }

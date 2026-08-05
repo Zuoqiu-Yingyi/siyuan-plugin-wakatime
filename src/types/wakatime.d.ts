@@ -134,7 +134,7 @@ export namespace Heartbeats {
             Context.IHeaders,
         ];
         timeout: number;
-        payload: IAction | IAction[];
+        payload: IAction[];
     }
 }
 
@@ -149,6 +149,7 @@ export namespace Context {
     export interface IEvent {
         time: number; // UNIX 时间戳 (单位: s)
         is_write: boolean; // 是否写入
+        context: IEventContext; // 上下文
     }
 
     export interface IRoot {
@@ -161,10 +162,7 @@ export namespace Context {
     export interface IContext {
         url: string;
         method: "POST";
-        headers: IHeaders;
-
-        project: string;
-        language: string;
+        Authorization: string;
 
         includeID: (RegExp | string)[];
         excludeID: (RegExp | string)[];
@@ -173,6 +171,12 @@ export namespace Context {
 
         blocks: Map<BlockID, BlockID>; // block -> root
         roots: Map<BlockID, IRoot>; // root -> { box, path }
-        actions: Heartbeats.IAction[]; // 待提交的活动
+    }
+
+    export interface IEventContext {
+        project: string; // 项目名称
+        language: string; // 语言名称
+        hostname: string; // 设备名
+        useragent: string; // 用户代理字段
     }
 }

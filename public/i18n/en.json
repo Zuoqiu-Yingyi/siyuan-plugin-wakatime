@@ -3,7 +3,7 @@
     "settings": {
         "generalSettings": {
             "cleanCache": {
-                "description": "Delete all offline cache files (page refresh after deletion)",
+                "description": "Delete all offline cache files",
                 "text": "Clean",
                 "title": "Clean offline cache"
             },

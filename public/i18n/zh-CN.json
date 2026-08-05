@@ -3,7 +3,7 @@
     "settings": {
         "generalSettings": {
             "cleanCache": {
-                "description": "删除所有离线缓存文件（删除后将刷新页面）",
+                "description": "删除所有离线缓存文件",
                 "text": "清理",
                 "title": "清理离线缓存"
             },

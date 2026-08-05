@@ -71,8 +71,7 @@
             i18n.settings.generalSettings.cleanCache.title, // 标题
             i18n.settings.generalSettings.cleanCache.description, // 文本
             async () => {
-                await plugin.clearCache(); // 重置配置
-                globalThis.location.reload(); // 刷新页面
+                await plugin.clearCache(); // 清理缓存
             }, // 确认按钮回调
         );
     }

@@ -126,8 +126,6 @@ export default class WakaTimePlugin extends siyuan.Plugin {
         this.eventBus.off("click-editorcontent", this.clickEditorContentEventListener);
         this.eventBus.off("opened-notebook", this.notebookEventListener);
         this.eventBus.off("closed-notebook", this.notebookEventListener);
-
-        this.kernel.rpc.call.unload?.();
     }
 
     public override openSetting(): void {
@@ -155,9 +153,9 @@ export default class WakaTimePlugin extends siyuan.Plugin {
     }
 
     /* 清理缓存 */
-    public async clearCache(directory: string = CONSTANTS.OFFLINE_CACHE_PATH): Promise<boolean> {
+    public async clearCache(): Promise<boolean> {
         try {
-            await this.client.removeFile({ path: directory });
+            await this.kernel.rpc.call.clearCache?.();
             return true;
         }
         catch (error) {
@@ -177,15 +175,7 @@ export default class WakaTimePlugin extends siyuan.Plugin {
 
     /* 更新内核插件配置 */
     public async updateWorkerConfig(): Promise<void> {
-        await this.kernel.rpc.call.updateConfig?.(
-            this.config,
-            {
-                url: this.wakatimeHeartbeatsApiUrl,
-                headers: this.wakatimeHeaders,
-                project: this.wakatimeProject,
-                language: this.wakatimeLanguage,
-            },
-        );
+        await this.kernel.rpc.call.updateConfig?.(this.config);
     }
 
     /* 总线事件监听器 */
@@ -211,7 +201,7 @@ export default class WakaTimePlugin extends siyuan.Plugin {
                         case "setAttrs":
                         case "doUpdateUpdated":
                             if (operation.id) {
-                                this.kernel.rpc.call.addEditEvent?.(operation.id);
+                                this.kernel.rpc.call.addEditEvent?.(operation.id, this.wakatimeEventContext);
                             }
                             break;
                         case "delete": // 忽略删除操作 (避免无法查询块信息)
@@ -233,7 +223,7 @@ export default class WakaTimePlugin extends siyuan.Plugin {
         const protyle = e.detail.protyle;
 
         if (protyle.notebookId && protyle.path && protyle.block.rootID) {
-            this.kernel.rpc.call.addViewEvent?.(protyle.block.rootID);
+            this.kernel.rpc.call.addViewEvent?.(protyle.block.rootID, this.wakatimeEventContext);
         }
     };
 
@@ -242,12 +232,12 @@ export default class WakaTimePlugin extends siyuan.Plugin {
         // this.logger.debug(e);
         const protyle = e.detail.protyle;
         if (protyle.notebookId && protyle.path && protyle.block.rootID) {
-            this.kernel.rpc.call.addViewEvent?.(protyle.block.rootID);
+            this.kernel.rpc.call.addViewEvent?.(protyle.block.rootID, this.wakatimeEventContext);
         }
     };
 
     /* 笔记本事件监听器 */
-    protected readonly notebookEventListener = (e: IClosedNotebookEvent | IOpenedNotebookEvent) => {
+    protected readonly notebookEventListener = (_e: IClosedNotebookEvent | IOpenedNotebookEvent) => {
         // this.logger.debug(e);
         this.kernel.rpc.call.updateNotebooks?.();
     };
@@ -421,5 +411,14 @@ export default class WakaTimePlugin extends siyuan.Plugin {
     public get wakatimeSystemArch(): string {
         return this.config?.wakatime?.system_arch
             || this.wakatimeDefaultSystemArch;
+    }
+
+    public get wakatimeEventContext(): Context.IEventContext {
+        return {
+            project: this.wakatimeProject,
+            language: this.wakatimeLanguage,
+            hostname: this.wakatimeHostname,
+            useragent: this.wakatimeUserAgent,
+        };
     }
 };

@@ -15,9 +15,12 @@
 
 import JSONL from "@/utils/jsonl";
 
-import type { Heartbeats } from "@/types/wakatime";
+import type { Context, Heartbeats } from "@/types/wakatime";
 
-export type TCacheDatum = Heartbeats.IAction | Heartbeats.IAction[];
+export interface TCacheData {
+    payload: Heartbeats.IAction[];
+    context: Context.IEventContext;
+}
 
 export type TCache<T> = {
     [P in keyof Array<T>]?: Array<T>[P];
@@ -36,7 +39,7 @@ export interface IStorageBackend {
     removeFile: (path: string) => Promise<unknown>;
 }
 
-export class WakaTimeCache<T extends object = TCacheDatum> implements TCache<T> {
+export class WakaTimeCache<T extends object = TCacheData> implements TCache<T> {
     /**
      * 构造缓存文件名
      * @param date - 时间日期
@@ -59,11 +62,10 @@ export class WakaTimeCache<T extends object = TCacheDatum> implements TCache<T> 
     protected filename!: string; // 缓存文件名
 
     protected readonly data: T[] = []; // 缓存的数据
-    protected readonly lines: string[] = []; // 缓存文件文本
 
     constructor(
-        public readonly backend: IStorageBackend, // 存储后端
-        public readonly directory: string, // 缓存文件目录
+        private readonly backend: IStorageBackend, // 存储后端
+        private readonly directory: string, // 缓存文件目录
         filename?: string,
     ) {
         this.init(filename);
@@ -111,10 +113,16 @@ export class WakaTimeCache<T extends object = TCacheDatum> implements TCache<T> 
      * @returns 文件路径列表
      */
     public async getAllCacheFileName(directory: string = this.directory): Promise<string[]> {
-        const files = await this.backend.readDir(directory);
-        return files
-            .filter((file) => file.isDir === false)
-            .map((file) => file.name);
+        try {
+            const files = await this.backend.readDir(directory);
+            return files
+                .filter((file) => file.isDir === false)
+                .map((file) => file.name);
+        }
+        catch (error) {
+            void error;
+            return [];
+        }
     }
 
     /**
@@ -130,7 +138,6 @@ export class WakaTimeCache<T extends object = TCacheDatum> implements TCache<T> 
 
     set length(value: number) {
         this.data.length = value;
-        this.lines.length = value;
     }
 
     at(index: number): T | undefined {
@@ -138,7 +145,7 @@ export class WakaTimeCache<T extends object = TCacheDatum> implements TCache<T> 
     }
 
     toString(): string {
-        return this.lines.join("\n");
+        return JSONL.stringify(this.data);
     }
 
     toLocaleString(): string {
@@ -147,23 +154,19 @@ export class WakaTimeCache<T extends object = TCacheDatum> implements TCache<T> 
 
     push(...items: T[]): number {
         this.data.push(...items);
-        this.lines.push(...items.map((datum) => JSON.stringify(datum)));
         return this.length;
     }
 
     pop(): T | undefined {
-        this.lines.pop();
         return this.data.pop();
     }
 
     shift(): T | undefined {
-        this.lines.shift();
         return this.data.shift();
     }
 
     unshift(...items: T[]): number {
         this.data.unshift(...items);
-        this.lines.unshift(...items.map((datum) => JSON.stringify(datum)));
         return this.length;
     }
 
@@ -264,7 +267,7 @@ export class WakaTimeCache<T extends object = TCacheDatum> implements TCache<T> 
                 const cache_file_name = WakaTimeCache.buildCacheFileName();
                 if (cache_file_name !== this.filename) { // 需要初始化缓存
                     /* 初始化缓存 */
-                    this.init();
+                    this.init(cache_file_name);
                 }
             }
 
@@ -279,15 +282,13 @@ export class WakaTimeCache<T extends object = TCacheDatum> implements TCache<T> 
     /**
      * 保存缓存数据为 jsonlines 文件
      * @param filepath - 文件路径
-     * @param terminator - 行终止符
      * @returns 是否持久化成功
      */
     protected async _save(
         filepath: string,
-        terminator: string = "\n",
     ): Promise<boolean> {
         if (this.data.length > 0) {
-            await this.backend.putFile(filepath, this.lines.join(terminator));
+            await this.backend.putFile(filepath, this.toString());
             return true;
         }
         return false;
