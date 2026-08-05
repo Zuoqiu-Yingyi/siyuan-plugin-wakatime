@@ -17,8 +17,6 @@ import moment from "@workspace/utils/date/moment";
 
 import JSONL from "@/utils/jsonl";
 
-import type { Client } from "@siyuan-community/siyuan-sdk";
-
 import type { Heartbeats } from "@/types/wakatime";
 
 export type TCacheDatum = Heartbeats.IAction | Heartbeats.IAction[];
@@ -26,6 +24,19 @@ export type TCacheDatum = Heartbeats.IAction | Heartbeats.IAction[];
 export type TCache<T> = {
     [P in keyof Array<T>]?: Array<T>[P];
 };
+
+/**
+ * 与 SiYuan 存储（文件读写）后端无关的接口。
+ * worker 端注入基于 SDK Client 的实现，内核端注入基于 siyuan.storage 的实现。
+ * Storage-backend-agnostic interface; the worker injects an SDK-Client adapter,
+ * the kernel injects a siyuan.storage adapter.
+ */
+export interface IStorageBackend {
+    putFile: (path: string, content: string) => Promise<unknown>;
+    getFile: (path: string) => Promise<string>;
+    readDir: (path: string) => Promise<{ name: string; isDir: boolean }[]>;
+    removeFile: (path: string) => Promise<unknown>;
+}
 
 export class WakaTimeCache<T extends object = TCacheDatum> implements TCache<T> {
     /**
@@ -51,7 +62,7 @@ export class WakaTimeCache<T extends object = TCacheDatum> implements TCache<T> 
     protected readonly lines: string[] = []; // 缓存文件文本
 
     constructor(
-        public readonly client: InstanceType<typeof Client>, // 思源客户端
+        public readonly backend: IStorageBackend, // 存储后端
         public readonly directory: string, // 缓存文件目录
         filename?: string,
     ) {
@@ -88,8 +99,8 @@ export class WakaTimeCache<T extends object = TCacheDatum> implements TCache<T> 
      * @returns 文件路径列表
      */
     public async getAllCacheFilePath(directory: string = this.directory): Promise<string[]> {
-        const files = await this.client.readDir({ path: directory });
-        return files.data
+        const files = await this.backend.readDir(directory);
+        return files
             .filter((file) => file.isDir === false)
             .map((file) => this.buildCacheFilePath(directory, file.name));
     }
@@ -100,8 +111,8 @@ export class WakaTimeCache<T extends object = TCacheDatum> implements TCache<T> 
      * @returns 文件路径列表
      */
     public async getAllCacheFileName(directory: string = this.directory): Promise<string[]> {
-        const files = await this.client.readDir({ path: directory });
-        return files.data
+        const files = await this.backend.readDir(directory);
+        return files
             .filter((file) => file.isDir === false)
             .map((file) => file.name);
     }
@@ -208,10 +219,10 @@ export class WakaTimeCache<T extends object = TCacheDatum> implements TCache<T> 
      */
     public async load(filepath: string = this.filepath): Promise<boolean> {
         /* 检查文件是否存在 */
-        const files = await this.client.readDir({ path: this.directory });
-        if (files.data.some((file) => file.name === this.filename && file.isDir === false)) {
+        const files = await this.backend.readDir(this.directory);
+        if (files.some((file) => file.name === this.filename && file.isDir === false)) {
             /* 若文件存在则读取文件 */
-            const text = await this.client.getFile({ path: filepath }, "text");
+            const text = await this.backend.getFile(filepath);
             this.clear();
             this.push(...JSONL.parse<T>(text));
             return true;
@@ -226,10 +237,10 @@ export class WakaTimeCache<T extends object = TCacheDatum> implements TCache<T> 
      */
     public async remove(filepath: string = this.filepath): Promise<boolean> {
         /* 检查文件是否存在 */
-        const files = await this.client.readDir({ path: this.directory });
-        if (files.data.some((file) => file.name === this.filename && file.isDir === false)) {
+        const files = await this.backend.readDir(this.directory);
+        if (files.some((file) => file.name === this.filename && file.isDir === false)) {
             /* 若文件存在则移除文件 */
-            await this.client.removeFile({ path: filepath });
+            await this.backend.removeFile(filepath);
             return true;
         }
         return false;
@@ -276,10 +287,7 @@ export class WakaTimeCache<T extends object = TCacheDatum> implements TCache<T> 
         terminator: string = "\n",
     ): Promise<boolean> {
         if (this.data.length > 0) {
-            await this.client.putFile({
-                path: filepath,
-                file: this.lines.join(terminator),
-            });
+            await this.backend.putFile(filepath, this.lines.join(terminator));
             return true;
         }
         return false;
