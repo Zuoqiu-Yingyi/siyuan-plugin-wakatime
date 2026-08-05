@@ -1,0 +1,22 @@
+src/kernel/index.ts
+  s_f872ffe1c991ea::t_627e40dd21afc3 107-108
+  s_f872ffe1c991ea::t_73e8278802616f 119
+src/workers/wakatime.ts
+  s_f872ffe1c991ea::t_a8ec6b6d650d6e 208
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.39-trip",
+  "base_commit_sha": "970cec4587bdfe74f0d7646a48f8d72618b32d00",
+  "prompts": {},
+  "sessions": {
+    "s_f872ffe1c991ea": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "716e2c4d-e980-404e-afd4-431e03bd92b1",
+        "model": "claude-glm-5.2"
+      },
+      "human_author": "Yingyi / 颖逸 <49649786+Zuoqiu-Yingyi@users.noreply.github.com>"
+    }
+  }
+}
