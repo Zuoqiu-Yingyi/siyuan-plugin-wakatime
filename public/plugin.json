@@ -2,8 +2,8 @@
     "name": "wakatime",
     "author": "Zuoqiu Yingyi",
     "url": "https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime",
-    "version": "0.3.8",
-    "minAppVersion": "3.7.0",
+    "version": "0.4.0",
+    "minAppVersion": "3.7.3",
     "keywords": [
         "分析",
         "统计",
