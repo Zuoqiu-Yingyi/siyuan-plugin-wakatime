@@ -15,7 +15,7 @@
 
 export default {
     GLOBAL_CONFIG_NAME: "global-config",
-    OFFLINE_CACHE_PATH: "temp/.wakatime/cache", // 缓存文件目录路径 (worker)
+    OFFLINE_CACHE_PATH: "data/storage/petal/wakatime/.cache", // 缓存文件目录路径 (worker)
     KERNEL_CACHE_PATH: ".cache", // 内核脚本缓存文件目录路径 (相对 storage 根)
     WAKATIME_DEFAULT_API_URL: "https://wakatime.com/api/v1", // 默认 API 地址
     WAKATIME_STATUS_BAR_PATHNAME: "users/current/statusbar/today", // 状态栏数据 API 地址

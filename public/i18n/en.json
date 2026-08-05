@@ -21,11 +21,11 @@
                     "title": "Edit operation tags"
                 },
                 "heartbeats": {
-                    "description": "Enable to submit action information to Wakapi/WakaTime service while viewing/editing documents",
-                    "title": "Heartbeat connection"
+                    "description": "Enable to push action information to Wakapi/WakaTime service regularly",
+                    "title": "Push activity information"
                 },
                 "interval": {
-                    "description": "Time interval (in seconds) to push editing action information to Wakapi/WakaTime server",
+                    "description": "Time interval (in seconds) to push editing action information to Wakapi/WakaTime service",
                     "title": "Push interval"
                 },
                 "language": {
@@ -35,6 +35,10 @@
                 "project": {
                     "description": "Custom current workspace name<br/>Corresponds to <code class='fn__code'>Projects</code> in Wakapi/WakaTime statistics",
                     "title": "Project name"
+                },
+                "record": {
+                    "description": "Enable to record activity information locally while viewing/editing documents",
+                    "title": "Record activity information"
                 },
                 "systemArch": {
                     "description": "The kernel architecture of the current operating system",

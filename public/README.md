@@ -76,11 +76,10 @@ A plugin for [SiYuan Note](https://github.com/siyuan-note/siyuan) that can use [
 
   - `General`
 
-    - `Heartbeat Connection`
+    - `Record activity information`
 
-      - Enable this option to use the API [users/current/heartbeats](https://wakatime.com/developers#heartbeats) to periodically submit activity information to the `Wakapi/WakaTime` service when viewing/editing documents.
-      - The time interval is set by `Wakapi/WakaTime > General Settings > Push Interval`.
-      - The submitted information includes:
+      - Enable this option to record activity information locally while viewing/editing documents.
+      - The recorded information includes:
 
         - `type`: `"file"`
         - `hostname`: Host name
@@ -108,6 +107,11 @@ A plugin for [SiYuan Note](https://github.com/siyuan-note/siyuan) that can use [
           - When editing a note, it is set to the item specified by `Wakapi/WakaTime > General Settings > Edit Operation Tag`.
         - `time`: Timestamp corresponding to the view/edit operation performed by the user.
         - `is_write`: Whether it is an editing operation.
+
+    - `Push activity information`
+
+      - Enable this option to use the API [users/current/heartbeats](https://wakatime.com/developers#heartbeats) to periodically push the recorded activity information to the `Wakapi/WakaTime` service when viewing/editing documents.
+      - The time interval is set by `Wakapi/WakaTime > General Settings > Push Interval`.
     - `Project Name`
 
       - Customize the name of the current workspace.
@@ -122,7 +126,7 @@ A plugin for [SiYuan Note](https://github.com/siyuan-note/siyuan) that can use [
 
       - If there are user operations (view/edit) within the specified time interval, the operation information will be submitted to the `Wakapi/WakaTime` service using the API [users/current/heartbeats](https://wakatime.com/developers#heartbeats).
       - Unit: seconds
-      - For more details about the submitted information, please refer to `Wakapi/WakaTime > General Settings > Heartbeat Connection`.
+      - For more details about the submitted information, please refer to `Wakapi/WakaTime > General Settings > Record activity information`.
     - `View Operation Tag`
 
       - Activity tags corresponding to user view operations

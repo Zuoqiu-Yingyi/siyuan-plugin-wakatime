@@ -76,11 +76,10 @@
 
   - `常规设置`
 
-    - `心跳连接`
+    - `记录活动信息`
 
-      - 开启后将在有查看/编辑文档操作时使用 API [users/current/heartbeats](https://wakatime.com/developers#heartbeats) 定时向 `Wakapi/WakaTime` 服务提交活动信息
-      - 时间间隔由 `Wakapi/WakaTime > 常规设置 > 推送时间间隔` 设定
-      - 提交的信息包含如下内容
+      - 开启后将在有查看/编辑文档操作时在本地记录活动信息
+      - 记录的信息包含如下内容
 
         - `type`: `"file"`
         - `hostname`: 主机名称
@@ -108,6 +107,10 @@
           - 编辑笔记时为 `Wakapi/WakaTime > 常规设置 > 编辑操作标签` 所设置的项
         - `time`: 用户进行查看/编辑操作时对应的时间戳
         - `is_write`: 是否为编辑操作
+    - `推送活动信息`
+
+      - 开启后将在有查看/编辑文档操作时使用 API [users/current/heartbeats](https://wakatime.com/developers#heartbeats) 定时向 `Wakapi/WakaTime` 服务推送所记录的活动信息
+      - 时间间隔由 `Wakapi/WakaTime > 常规设置 > 推送时间间隔` 设定
     - `项目名称`
 
       - 自定义当前工作空间的名称
@@ -122,7 +125,7 @@
 
       - 在指定的时间间隔内若存在用户操作(查看/编辑), 则使用 API [users/current/heartbeats](https://wakatime.com/developers#heartbeats) 向 `Wakapi/WakaTime` 服务提交操作信息
       - 单位: 秒
-      - 提交的信息详情请参考 `Wakapi/WakaTime > 常规设置 > 心跳连接`
+      - 提交的信息详情请参考 `Wakapi/WakaTime > 常规设置 > 记录活动信息`
     - `查看操作标签`
 
       - 用户查看操作对应的活动标签

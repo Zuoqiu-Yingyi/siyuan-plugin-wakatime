@@ -201,7 +201,7 @@ export default class WakaTimePlugin extends siyuan.Plugin {
                         case "unfoldHeading":
                         case "setAttrs":
                         case "doUpdateUpdated":
-                            if (operation.id) {
+                            if (this.config.wakatime.record && operation.id) {
                                 this.kernel.rpc.call.addEditEvent?.(operation.id, this.wakatimeEventContext);
                             }
                             break;
@@ -220,10 +220,8 @@ export default class WakaTimePlugin extends siyuan.Plugin {
     /* 编辑器加载事件监听器 */
     protected readonly protyleEventListener = (e: IDestroyProtyleEvent | ILoadedProtyleDynamicEvent | ILoadedProtyleStaticEvent | ISwitchProtyleEvent) => {
         // this.logger.debug(e);
-
         const protyle = e.detail.protyle;
-
-        if (protyle.notebookId && protyle.path && protyle.block.rootID) {
+        if (this.config.wakatime.record && protyle.block.rootID) {
             this.kernel.rpc.call.addViewEvent?.(protyle.block.rootID, this.wakatimeEventContext);
         }
     };
@@ -232,7 +230,7 @@ export default class WakaTimePlugin extends siyuan.Plugin {
     protected readonly clickEditorContentEventListener = (e: IClickEditorContentEvent) => {
         // this.logger.debug(e);
         const protyle = e.detail.protyle;
-        if (protyle.notebookId && protyle.path && protyle.block.rootID) {
+        if (this.config.wakatime.record && protyle.block.rootID) {
             this.kernel.rpc.call.addViewEvent?.(protyle.block.rootID, this.wakatimeEventContext);
         }
     };

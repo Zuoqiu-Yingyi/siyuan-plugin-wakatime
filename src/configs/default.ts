@@ -33,6 +33,7 @@ export const DEFAULT_CONFIG: IConfig = {
         include: [],
         exclude: [],
 
+        record: false,
         heartbeats: false,
         project: "",
         language: "",
