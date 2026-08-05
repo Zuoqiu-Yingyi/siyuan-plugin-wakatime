@@ -61,7 +61,16 @@ const client = new Client(
     "fetch",
 );
 const notebook = new Map<BlockID, INotebook>(); // 笔记本 ID => 笔记本信息
-const cache = new WakaTimeCache(client, CONSTANTS.OFFLINE_CACHE_PATH);
+
+/* SDK Client 适配器 — 将 siyuan-sdk Client 包装为 IStorageBackend */
+const sdkStorageBackend = {
+    putFile: (path: string, content: string) => client.putFile({ path, file: content }),
+    getFile: (path: string) => client.getFile({ path }, "text"),
+    readDir: (path: string) => client.readDir({ path }).then((r) => r.data),
+    removeFile: (path: string) => client.removeFile({ path }),
+} satisfies import("@/wakatime/cache").IStorageBackend;
+
+const cache = new WakaTimeCache(sdkStorageBackend, CONSTANTS.OFFLINE_CACHE_PATH);
 const caches: InstanceType<typeof WakaTimeCache<TCacheDatum>>[] = [];
 const timer = {
     heartbeat: 0, // 心跳定时器
