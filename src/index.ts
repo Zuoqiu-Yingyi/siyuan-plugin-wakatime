@@ -120,10 +120,11 @@ export default class WakaTimePlugin extends siyuan.Plugin {
         /* 添加活动记录功能开关 */
         this.topBarButton = this.addTopBar({
             icon: "icon-wakatime",
-            title: this.i18n.menu.switch.title,
+            title: this.wakatimeRecordStateText,
             position: "right",
             callback: this.toggleRecordState,
         });
+        this.updateTopBarButtonState();
     }
 
     public override onunload(): void {
@@ -193,13 +194,13 @@ export default class WakaTimePlugin extends siyuan.Plugin {
      */
     protected updateTopBarButtonState(): void {
         if (this.topBarButton) {
-            const record = this.config.wakatime.record;
+            const enable = this.config.wakatime.record;
 
             /* 更改顶部菜单栏按钮文本 */
-            // this.topBarButton.ariaLabel = this.i18n.menu.switch.title;
+            this.topBarButton.ariaLabel = this.wakatimeRecordStateText;
 
             /* 更改顶部菜单栏按钮状态 */
-            this.topBarButton.classList.toggle("toolbar__item--active", record);
+            this.topBarButton.classList.toggle("toolbar__item--active", enable);
         }
     }
 
@@ -444,6 +445,7 @@ export default class WakaTimePlugin extends siyuan.Plugin {
             || this.wakatimeDefaultSystemArch;
     }
 
+    /* 事件上下文 */
     public get wakatimeEventContext(): Context.IEventContext {
         return {
             project: this.wakatimeProject,
@@ -451,5 +453,11 @@ export default class WakaTimePlugin extends siyuan.Plugin {
             hostname: this.wakatimeHostname,
             useragent: this.wakatimeUserAgent,
         };
+    }
+
+    private get wakatimeRecordStateText(): string {
+        return this.config.wakatime.record
+            ? this.i18n.topBar.record.enabled
+            : this.i18n.topBar.record.disabled;
     }
 };

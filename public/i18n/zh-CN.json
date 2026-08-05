@@ -1,9 +1,4 @@
 {
-    "menu": {
-        "switch": {
-            "title": "WakaTime 记录活动信息"
-        }
-    },
     "displayName": "WakaTime",
     "settings": {
         "generalSettings": {
@@ -128,6 +123,13 @@
                 "title": "服务设置"
             },
             "title": "Wakapi/WakaTime"
+        }
+    },
+    "topBar": {
+        "record": {
+            "disabled": "WakaTime 记录 🔴",
+            "enabled": "WakaTime 记录 🟢",
+            "title": "WakaTime 记录"
         }
     }
 }

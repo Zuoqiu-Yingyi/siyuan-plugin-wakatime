@@ -1,9 +1,4 @@
 {
-    "menu": {
-        "switch": {
-            "title": "WakaTime record activity information"
-        }
-    },
     "displayName": "WakaTime",
     "settings": {
         "generalSettings": {
@@ -128,6 +123,13 @@
                 "title": "Service"
             },
             "title": "Wakapi/WakaTime"
+        }
+    },
+    "topBar": {
+        "record": {
+            "disabled": "WakaTime record 🔴",
+            "enabled": "WakaTime record 🟢",
+            "title": "WakaTime record"
         }
     }
 }
