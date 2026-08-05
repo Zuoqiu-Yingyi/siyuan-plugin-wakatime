@@ -1,5 +1,45 @@
 # Changelog
 
+## [0.4.0](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/compare/v0.3.8...v0.4.0) (2026-08-05)
+
+
+### Build System
+
+* **wakatime:** add kernel build mode producing dist/kernel.js ([b9410ee](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/b9410ee498e90e8d512b85b08f8ef500dcda1f9e))
+
+
+### Miscellaneous
+
+* release v0.4.0 ([3627be9](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/3627be94c0b8d585ba46226041bf6c899228b6cf))
+* **vite:** update entry resolution to use import.meta.dirname ([2b28352](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/2b283520e15cfe4c40d37251900582e619b1808b))
+
+
+### Features
+
+* **version:** update version to 0.4.0 in package.json, plugin.json, and release-please-config.json ([ac85e8a](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/ac85e8a94d92fdc1ce5fef1720d1a8bfebe7f739))
+* **wakatime:** add KERNEL_CACHE_PATH constant for kernel cache dir ([c05ede6](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/c05ede672dbb969a6000ea34cd3afc0c8148004f))
+* **wakatime:** add local activity recording and push functionality ([22ea760](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/22ea7605704217a00447e5e548398f56dac0fc14))
+* **wakatime:** add status bar item properties and integrate WakaTime status updates ([f5dce0b](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/f5dce0b1f7b618950d1772c9d4acb8e00c01f84c))
+* **wakatime:** add top bar button for activity recording and update i18n files ([686ee04](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/686ee04e2cfc234058186ff5d42e880c47cd09f8))
+* **wakatime:** implement kernel plugin with rpc/storage/forwardProxy ([1d7007c](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/1d7007cc56bf49c9aa1deffac7d4d28c737b3919))
+* **wakatime:** implement top bar recording button with state management and i18n updates ([5beff6b](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/5beff6bc1eee3f056d4de74e287ca3e591ddc9d1))
+
+
+### Bug Fixes
+
+* **wakatime:** fix two svelte-check type errors ([970cec4](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/970cec4587bdfe74f0d7646a48f8d72618b32d00))
+
+
+### Code Refactoring
+
+* **onload:** convert onload to async and streamline configuration loading ([0af6218](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/0af6218b7aded71acedb8e4e14e86e3da5e23ecc))
+* **wakatime:** drive kernel plugin via this.kernel.rpc ([3f0069f](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/3f0069f4b849a3e8c0c46ba5c345beebb5e27429))
+* **wakatime:** extract IStorageBackend for cache, worker injects SDK adapter ([71810d4](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/71810d4fbe0e69d1bb4103c46aa9bca889e19a93))
+* **wakatime:** extract IStorageBackend interface for cache ([cc92ea9](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/cc92ea92f2a12ccb74d7c763cb5ad8bdc9657edc))
+* **wakatime:** simplify cache management and enhance event context handling ([baf94f9](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/baf94f9e806a09050c5eabc705616c2ac161a9f5))
+* **wakatime:** streamline build scripts and enhance kernel plugin event handling ([6c53e94](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/6c53e9408e1c70a305adb85a629d5f5086739fdb))
+* **wakatime:** update build configuration and remove unused worker script ([391aec4](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/391aec437b3a8e099c83cde7db83dfa6804ebf40))
+
 ## [0.3.8](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/compare/v0.3.7...v0.3.8) (2026-08-04)
 
 
