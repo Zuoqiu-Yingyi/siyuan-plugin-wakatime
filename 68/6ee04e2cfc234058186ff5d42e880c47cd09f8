@@ -1,0 +1,27 @@
+src/index.ts
+  s_5cf1e0718b2c8a::t_6d82e1498fbd71 191-198,200-211
+  s_5cf1e0718b2c8a::t_caac5d131a564e 120-126
+  s_5cf1e0718b2c8a::t_1540a1b13a2a1c 73
+public/i18n/zh-TW.json
+  s_5cf1e0718b2c8a::t_42ed1e53d56950 2-3,5-6
+public/i18n/zh-CN.json
+  s_5cf1e0718b2c8a::t_ac16a6ac878a11 2-3,5-6
+public/i18n/en.json
+  s_5cf1e0718b2c8a::t_d5ce9b9a625921 2-3,5-6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.39-trip",
+  "base_commit_sha": "686ee04e2cfc234058186ff5d42e880c47cd09f8",
+  "prompts": {},
+  "sessions": {
+    "s_5cf1e0718b2c8a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "34d2d042-4d93-4c7a-80e9-27851e42552a",
+        "model": "claude-glm-5.2"
+      },
+      "human_author": "Yingyi / 颖逸 <49649786+Zuoqiu-Yingyi@users.noreply.github.com>"
+    }
+  }
+}
