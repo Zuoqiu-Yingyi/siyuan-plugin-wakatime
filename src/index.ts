@@ -80,7 +80,7 @@ export default class WakaTimePlugin extends siyuan.Plugin {
         this.SETTINGS_DIALOG_ID = `${this.name}-settings-dialog`;
     }
 
-    public override onload(): void {
+    public override async onload(): Promise<void> {
         // this.logger.debug(this);
 
         /* 注册图标 */
@@ -90,28 +90,29 @@ export default class WakaTimePlugin extends siyuan.Plugin {
         ].join(""));
 
         /* 加载配置文件 */
-        this.loadData(WakaTimePlugin.GLOBAL_CONFIG_NAME)
-            .then((config) => {
-                this.config = mergeIgnoreArray(DEFAULT_CONFIG, config || {}) as IConfig;
-            })
-            .catch((error) => this.logger.error(error))
-            .finally(async () => {
-                /* 总线 */
-                this.eventBus.on("ws-main", this.webSocketMainEventListener);
+        try {
+            this.config = mergeIgnoreArray(DEFAULT_CONFIG, await this.loadData(WakaTimePlugin.GLOBAL_CONFIG_NAME) || {}) as IConfig;
+        }
+        catch (error) {
+            this.logger.error(error);
+        }
+        finally {
+            /* 总线 */
+            this.eventBus.on("ws-main", this.webSocketMainEventListener);
 
-                /* 编辑器加载 */
-                this.eventBus.on("loaded-protyle-static", this.protyleEventListener);
-                this.eventBus.on("loaded-protyle-dynamic", this.protyleEventListener);
-                this.eventBus.on("switch-protyle", this.protyleEventListener);
-                this.eventBus.on("destroy-protyle", this.protyleEventListener);
+            /* 编辑器加载 */
+            this.eventBus.on("loaded-protyle-static", this.protyleEventListener);
+            this.eventBus.on("loaded-protyle-dynamic", this.protyleEventListener);
+            this.eventBus.on("switch-protyle", this.protyleEventListener);
+            this.eventBus.on("destroy-protyle", this.protyleEventListener);
 
-                /* 编辑区点击 */
-                this.eventBus.on("click-editorcontent", this.clickEditorContentEventListener);
+            /* 编辑区点击 */
+            this.eventBus.on("click-editorcontent", this.clickEditorContentEventListener);
 
-                /* 笔记本状态变化 */
-                this.eventBus.on("opened-notebook", this.notebookEventListener);
-                this.eventBus.on("closed-notebook", this.notebookEventListener);
-            });
+            /* 笔记本状态变化 */
+            this.eventBus.on("opened-notebook", this.notebookEventListener);
+            this.eventBus.on("closed-notebook", this.notebookEventListener);
+        }
     }
 
     public override onLayoutReady(): void {
