@@ -1,0 +1,19 @@
+public/i18n/zh-TW.json
+  s_a1161c5c36a6d1::t_1e5b32c9b00691 25
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.39-trip",
+  "base_commit_sha": "22ea7605704217a00447e5e548398f56dac0fc14",
+  "prompts": {},
+  "sessions": {
+    "s_a1161c5c36a6d1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "42720e29-f478-4b48-aaef-a8254a26841e",
+        "model": "claude-glm-5.2"
+      },
+      "human_author": null
+    }
+  }
+}
