@@ -1,0 +1,24 @@
+vite.config.ts
+  s_f872ffe1c991ea::t_568d06f6b4301b 59-61
+  s_f872ffe1c991ea::t_bded945042581a 97-105
+package.json
+  s_f872ffe1c991ea::t_3c6abfee7219ac 8-9,12
+src/kernel/index.ts
+  s_f872ffe1c991ea::t_84548decc9a78e 1-19
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.39-trip",
+  "base_commit_sha": "b9410ee498e90e8d512b85b08f8ef500dcda1f9e",
+  "prompts": {},
+  "sessions": {
+    "s_f872ffe1c991ea": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "716e2c4d-e980-404e-afd4-431e03bd92b1",
+        "model": "claude-glm-5.2"
+      },
+      "human_author": "Yingyi / 颖逸 <49649786+Zuoqiu-Yingyi@users.noreply.github.com>"
+    }
+  }
+}
