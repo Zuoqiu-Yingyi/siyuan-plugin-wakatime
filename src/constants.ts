@@ -30,4 +30,14 @@ export default {
     WAKATIME_WORKER_BROADCAST_CHANNEL_NAME: "wakatime-worker", // web worker 广播通道名称
     CACHE_CHECK_INTERVAL: 5 * 60 * 1_000, // 缓存检查时间间隔
     CACHE_COMMIT_INTERVAL: 1 * 1_000, // 缓存每次提交时间间隔
-};
+    KERNEL_RPC_METHOD: {
+        ON_LOAD: "on-load", // 客户端插件加载完成
+        CLEAR_CACHE: "clear-cache", // 清除缓存
+        UPDATE_CONFIG: "update-config", // 更新配置
+        UPDATE_NOTEBOOKS: "update-notebooks", // 更新笔记本列表
+        ADD_VIEW_EVENT: "add-view-event", // 添加查看事件
+        ADD_EDIT_EVENT: "add-edit-event", // 添加编辑事件
+
+        WAKATIME_STATUS: "wakatime-status", // WakaTime 状态
+    } as const,
+} as const;

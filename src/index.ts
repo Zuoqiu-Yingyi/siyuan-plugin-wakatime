@@ -17,6 +17,7 @@ import { Client } from "@siyuan-community/siyuan-sdk";
 import siyuan from "siyuan";
 import { mount } from "svelte";
 
+import ToolbarItem from "@workspace/components/siyuan/misc/ToolbarItem.svelte";
 import {
     FLAG_MOBILE,
 } from "@workspace/utils/env/front-end";
@@ -32,6 +33,7 @@ import icon_wakatime from "./assets/symbols/icon-wakatime.symbol?raw";
 import { DEFAULT_CONFIG } from "./configs/default";
 import CONSTANTS from "./constants";
 
+import { statusBarItemProps } from "./components/props.svelte";
 import Settings from "./components/Settings.svelte";
 
 import type { ISiyuanGlobal } from "@workspace/types/siyuan";
@@ -50,6 +52,7 @@ import type { ITransaction } from "@workspace/types/siyuan/transaction";
 import type { IConfig } from "./types/config";
 import type {
     Context,
+    Status,
 } from "./types/wakatime";
 
 const siyuanGlobal = globalThis as ISiyuanGlobal;
@@ -71,6 +74,7 @@ export default class WakaTimePlugin extends siyuan.Plugin {
     public config: IConfig = DEFAULT_CONFIG;
     protected kernelPluginReady = false;
     protected topBarButton?: HTMLElement; // 顶部菜单栏按钮
+    protected statusBarButton?: HTMLElement; // 状态栏按钮
 
     constructor(options: any) {
         super(options);
@@ -114,6 +118,11 @@ export default class WakaTimePlugin extends siyuan.Plugin {
             this.eventBus.on("opened-notebook", this.notebookEventListener);
             this.eventBus.on("closed-notebook", this.notebookEventListener);
         }
+
+        /* 绑定 RPC */
+        this.kernel.rpc.bind(CONSTANTS.KERNEL_RPC_METHOD.WAKATIME_STATUS, this.updateWakatimeStatus as siyuan.TJsonRpcHandler<void>);
+
+        this.kernel.rpc.call[CONSTANTS.KERNEL_RPC_METHOD.ON_LOAD]?.();
     }
 
     public override onLayoutReady(): void {
@@ -125,6 +134,16 @@ export default class WakaTimePlugin extends siyuan.Plugin {
             callback: this.toggleRecordState,
         });
         this.updateTopBarButtonState();
+
+        /* 添加状态栏图标 */
+        this.statusBarButton = this.addStatusBar({
+            element: globalThis.document.createElement("div"),
+            position: "right",
+        });
+        mount(ToolbarItem, {
+            target: this.statusBarButton,
+            props: statusBarItemProps,
+        });
     }
 
     public override onunload(): void {
@@ -186,7 +205,7 @@ export default class WakaTimePlugin extends siyuan.Plugin {
 
     /* 更新内核插件配置 */
     public async updateWorkerConfig(): Promise<void> {
-        await this.kernel.rpc.call.updateConfig?.(this.config);
+        await this.kernel.rpc.call[CONSTANTS.KERNEL_RPC_METHOD.UPDATE_CONFIG]?.(this.config);
     }
 
     /**
@@ -233,7 +252,7 @@ export default class WakaTimePlugin extends siyuan.Plugin {
                         case "setAttrs":
                         case "doUpdateUpdated":
                             if (this.config.wakatime.record && operation.id) {
-                                this.kernel.rpc.call.addEditEvent?.(operation.id, this.wakatimeEventContext);
+                                this.kernel.rpc.call[CONSTANTS.KERNEL_RPC_METHOD.ADD_EDIT_EVENT]?.(operation.id, this.wakatimeEventContext);
                             }
                             break;
                         case "delete": // 忽略删除操作 (避免无法查询块信息)
@@ -253,7 +272,7 @@ export default class WakaTimePlugin extends siyuan.Plugin {
         // this.logger.debug(e);
         const protyle = e.detail.protyle;
         if (this.config.wakatime.record && protyle.block.rootID) {
-            this.kernel.rpc.call.addViewEvent?.(protyle.block.rootID, this.wakatimeEventContext);
+            this.kernel.rpc.call[CONSTANTS.KERNEL_RPC_METHOD.ADD_VIEW_EVENT]?.(protyle.block.rootID, this.wakatimeEventContext);
         }
     };
 
@@ -262,37 +281,31 @@ export default class WakaTimePlugin extends siyuan.Plugin {
         // this.logger.debug(e);
         const protyle = e.detail.protyle;
         if (this.config.wakatime.record && protyle.block.rootID) {
-            this.kernel.rpc.call.addViewEvent?.(protyle.block.rootID, this.wakatimeEventContext);
+            this.kernel.rpc.call[CONSTANTS.KERNEL_RPC_METHOD.ADD_VIEW_EVENT]?.(protyle.block.rootID, this.wakatimeEventContext);
         }
     };
 
     /* 笔记本事件监听器 */
     protected readonly notebookEventListener = (_e: IClosedNotebookEvent | IOpenedNotebookEvent) => {
         // this.logger.debug(e);
-        this.kernel.rpc.call.updateNotebooks?.();
+        this.kernel.rpc.call[CONSTANTS.KERNEL_RPC_METHOD.UPDATE_NOTEBOOKS]?.();
+    };
+
+    /* 更新 Wakatime 状态 */
+    protected readonly updateWakatimeStatus = (status: Status.IResponse) => {
+        // this.logger.debug(`wakatime-status:`, status);
+        statusBarItemProps.ariaLabel = status.data.grand_total.text;
     };
 
     /* 测试服务状态 */
     public async testService(): Promise<boolean> {
-        try {
-            const response = await this.client.forwardProxy({
-                url: this.wakatimeStatusBarApiUrl,
-                method: "GET",
-                headers: [this.wakatimeHeaders],
-                timeout: this.config.wakatime.timeout * 1_000,
-            });
-            if (response.data.status >= 200 && response.data.status < 300) {
-                return true;
-            }
-            else {
-                this.logger.warn(response);
-                return false;
-            };
+        const response = await this.kernel.rpc.call[CONSTANTS.KERNEL_RPC_METHOD.WAKATIME_STATUS]?.();
+        if (response != null) {
+            return true;
         }
-        catch (error) {
-            void error;
+        else {
             return false;
-        }
+        };
     }
 
     /* 获取一个新 ID */
@@ -361,14 +374,6 @@ export default class WakaTimePlugin extends siyuan.Plugin {
             || "unknown";
     }
 
-    public get wakatimeHeaders(): Context.IHeaders {
-        return {
-            "Authorization": this.wakatimeAuthorization,
-            "User-Agent": this.wakatimeUserAgent,
-            "X-Machine-Name": this.wakatimeHostname,
-        };
-    }
-
     public get wakatimeWorkspaceDirectory(): string {
         return siyuanGlobal.siyuan?.config?.system?.workspaceDir
             || "unknown";
@@ -396,11 +401,6 @@ export default class WakaTimePlugin extends siyuan.Plugin {
     /* wakatime statusbar url */
     public get wakatimeHeartbeatsApiUrl(): string {
         return `${this.wakatimeApiBaseUrl}/${CONSTANTS.WAKATIME_HEARTBEATS_PATHNAME}`;
-    }
-
-    /* wakatime Authorization */
-    public get wakatimeAuthorization(): string {
-        return `Basic ${btoa(this.config?.wakatime?.api_key)}`;
     }
 
     /* wakatime Hostname */

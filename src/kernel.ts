@@ -27,7 +27,7 @@ import type * as kernel from "siyuan/kernel";
 import type { BlockID } from "@workspace/types/siyuan";
 
 import type { IConfig } from "@/types/config";
-import type { Context, Heartbeats } from "@/types/wakatime";
+import type { Context, Heartbeats, Status } from "@/types/wakatime";
 import type { IStorageBackend, TCacheData } from "@/wakatime/cache";
 
 interface INotebook {
@@ -89,6 +89,49 @@ class KernelWakaTime {
         this.siyuan.plugin.lifecycle.onunload = this.onunload.bind(this);
     }
 
+    /* 加载 */
+    private async onload(): Promise<void> {
+        /* 加载配置 */
+        await this.loadConfig();
+
+        /* 加载缓存数据 */
+        await this.cache.load();
+
+        /* 更新笔记本列表 */
+        await this.updateNotebook();
+
+        /* 启动定时器 */
+        this.startTimer();
+
+        /* 绑定 RPC 方法 */
+        await this.siyuan.rpc.bind(CONSTANTS.KERNEL_RPC_METHOD.ON_LOAD, this.rpcOnload.bind(this), "Client plugin initialized.");
+        await this.siyuan.rpc.bind(CONSTANTS.KERNEL_RPC_METHOD.CLEAR_CACHE, this.rpcClearCache.bind(this), "Clear the offline cache.");
+        await this.siyuan.rpc.bind(CONSTANTS.KERNEL_RPC_METHOD.UPDATE_CONFIG, this.rpcUpdateConfig.bind(this), "Update config and request context.");
+        await this.siyuan.rpc.bind(CONSTANTS.KERNEL_RPC_METHOD.UPDATE_NOTEBOOKS, this.rpcUpdateNotebooks.bind(this), "Update the list of notebooks.");
+        await this.siyuan.rpc.bind(CONSTANTS.KERNEL_RPC_METHOD.ADD_VIEW_EVENT, this.rpcAddViewEvent.bind(this), "Record a view heartbeat (id only).");
+        await this.siyuan.rpc.bind(CONSTANTS.KERNEL_RPC_METHOD.ADD_EDIT_EVENT, this.rpcAddEditEvent.bind(this), "Record an edit heartbeat (id only).");
+
+        await this.siyuan.rpc.bind(CONSTANTS.KERNEL_RPC_METHOD.WAKATIME_STATUS, this.rpcStatus.bind(this), "Client plugin initialized.");
+    }
+
+    /* 运行中 */
+    private async onrunning(): Promise<void> { }
+
+    /* 卸载 */
+    private async onunload(): Promise<void> {
+        this.clearTimer();
+        await this.commit();
+
+        await this.siyuan.rpc.unbind(CONSTANTS.KERNEL_RPC_METHOD.ON_LOAD);
+        await this.siyuan.rpc.unbind(CONSTANTS.KERNEL_RPC_METHOD.CLEAR_CACHE);
+        await this.siyuan.rpc.unbind(CONSTANTS.KERNEL_RPC_METHOD.UPDATE_CONFIG);
+        await this.siyuan.rpc.unbind(CONSTANTS.KERNEL_RPC_METHOD.UPDATE_NOTEBOOKS);
+        await this.siyuan.rpc.unbind(CONSTANTS.KERNEL_RPC_METHOD.ADD_VIEW_EVENT);
+        await this.siyuan.rpc.unbind(CONSTANTS.KERNEL_RPC_METHOD.ADD_EDIT_EVENT);
+
+        await this.siyuan.rpc.unbind(CONSTANTS.KERNEL_RPC_METHOD.WAKATIME_STATUS);
+    }
+
     /**
      * 基于 siyuan.storage 的缓存后端适配器。
      * siyuan.storage 路径相对于 data/storage/petal/<plugin-name>/。
@@ -133,7 +176,7 @@ class KernelWakaTime {
      * 通过 /api/network/forwardProxy 外发 HTTP 请求。
      * Forwards an outbound HTTP request via /api/network/forwardProxy.
      */
-    private async forwardProxy(request: Heartbeats.IRequest): Promise<{ status: number; body: string }> {
+    private async forwardProxy(request: Heartbeats.IRequest | Status.IRequest): Promise<{ status: number; body: string }> {
         const response = await this.siyuan.client.fetch("/api/network/forwardProxy", {
             method: "POST",
             body: JSON.stringify({
@@ -167,10 +210,14 @@ class KernelWakaTime {
     /* 启动定时器 */
     private startTimer(interval: number = this.config.wakatime.interval): void {
         this.commit();
+        this.status();
         this.checkCache();
 
-        this.timer.heartbeat = setInterval(() => void this.commit(), interval * 1_000) as unknown as number;
-        this.timer.cacheCheck = setInterval(() => void this.checkCache(), CONSTANTS.CACHE_CHECK_INTERVAL) as unknown as number;
+        this.timer.heartbeat = setInterval(() => {
+            this.commit();
+            this.status();
+        }, interval * 1_000);
+        this.timer.cacheCheck = setInterval(() => void this.checkCache(), CONSTANTS.CACHE_CHECK_INTERVAL);
     }
 
     /* 加载配置 */
@@ -287,6 +334,14 @@ class KernelWakaTime {
                 }
                 await this.cache.save(); // 缓存持久化
             }
+        }
+    }
+
+    /* 推送状态 */
+    private async status(): Promise<void> {
+        const response = await this.getStatus();
+        if (response != null) {
+            this.siyuan.rpc.broadcast(CONSTANTS.KERNEL_RPC_METHOD.WAKATIME_STATUS, response);
         }
     }
 
@@ -478,6 +533,32 @@ class KernelWakaTime {
     }
 
     /**
+     * 获取 WakaTime 状态
+     * REF: https://wakatime.com/developers#status_bar
+     */
+    private async getStatus(): Promise<null | Status.IResponse> {
+        try {
+            const response = await this.forwardProxy({
+                url: `${this.config?.wakatime?.api_url ?? CONSTANTS.WAKATIME_DEFAULT_API_URL}/${CONSTANTS.WAKATIME_STATUS_BAR_PATHNAME}`,
+                method: "GET",
+                headers: [
+                    {
+                        Authorization: this.context.Authorization,
+                    },
+                ],
+                timeout: this.config.wakatime.timeout * 1_000,
+            });
+            if (response.status >= 200 && response.status < 300) {
+                return JSON.parse(response.body) as Status.IResponse;
+            }
+        }
+        catch (error) {
+            void error;
+        }
+        return null;
+    }
+
+    /**
      * 黑白名单过滤
      * @param entity - 文件路径
      * @param include - 包含列表
@@ -625,46 +706,14 @@ class KernelWakaTime {
         }
     }
 
-    /* 加载 */
-    private async onload(): Promise<void> {
-        /* 加载配置 */
-        await this.loadConfig();
-
-        /* 加载缓存数据 */
-        await this.cache.load();
-
-        /* 更新笔记本列表 */
-        await this.updateNotebook();
-
-        /* 启动定时器 */
-        this.startTimer();
-
-        /* 绑定 RPC 方法 */
-        await this.siyuan.rpc.bind("clearCache", this.rpcClearCache.bind(this), "Clear the offline cache.");
-        await this.siyuan.rpc.bind("updateConfig", this.rpcUpdateConfig.bind(this), "Update config and request context.");
-        await this.siyuan.rpc.bind("updateNotebooks", this.rpcUpdateNotebooks.bind(this), "Update the list of notebooks.");
-        await this.siyuan.rpc.bind("addViewEvent", this.rpcAddViewEvent.bind(this), "Record a view heartbeat (id only).");
-        await this.siyuan.rpc.bind("addEditEvent", this.rpcAddEditEvent.bind(this), "Record an edit heartbeat (id only).");
-    }
-
-    /* 运行中 */
-    private async onrunning(): Promise<void> { }
-
-    /* 卸载 */
-    private async onunload(): Promise<void> {
-        this.clearTimer();
-        await this.commit();
-
-        await this.siyuan.rpc.unbind("clearCache");
-        await this.siyuan.rpc.unbind("updateConfig");
-        await this.siyuan.rpc.unbind("updateNotebooks");
-        await this.siyuan.rpc.unbind("addViewEvent");
-        await this.siyuan.rpc.unbind("addEditEvent");
-    }
-
     /* RPC: updateNotebooks */
     private async rpcUpdateNotebooks(): Promise<void> {
         await this.updateNotebook();
+    }
+
+    /* RPC: onload */
+    private async rpcOnload(): Promise<void> {
+        await this.status();
     }
 
     /* RPC: clearCache */
@@ -710,6 +759,12 @@ class KernelWakaTime {
                 context,
             });
         }
+    }
+
+    /* RPC: status */
+    private async rpcStatus(): Promise<null | Status.IResponse> {
+        const response = await this.getStatus();
+        return response;
     }
 }
 
