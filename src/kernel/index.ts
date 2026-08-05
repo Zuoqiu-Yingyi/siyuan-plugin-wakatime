@@ -104,7 +104,8 @@ class KernelWakaTime {
             return obj.text();
         },
         readDir: async (path) => {
-            const entries = await this.siyuan.storage.list(`/${path}` as `/${string}`);
+            const dir: `/${string}` = path.startsWith("/") ? path as `/${string}` : `/${path}`;
+            const entries = await this.siyuan.storage.list(dir);
             return entries.map((e) => ({ name: e.name, isDir: e.isDir }));
         },
         removeFile: (path) => this.siyuan.storage.remove(path),
@@ -115,7 +116,7 @@ class KernelWakaTime {
      * Calls a kernel REST endpoint and verifies code === 0.
      */
     private async kernelFetch<T>(path: string, body?: Record<string, unknown>): Promise<T> {
-        const resp = await this.siyuan.client.fetch(path, {
+        const resp = await this.siyuan.client.fetch(path as `/${string}`, {
             method: "POST",
             body: body === undefined ? "{}" : JSON.stringify(body),
         });

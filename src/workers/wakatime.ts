@@ -205,7 +205,7 @@ async function checkCache(): Promise<void> {
     /* 初始化历史缓存对象列表 */
     caches.length = 0;
     caches.push(...cache_files_name.map((filename) => new WakaTimeCache(
-        client,
+        sdkStorageBackend,
         CONSTANTS.OFFLINE_CACHE_PATH,
         filename,
     )));
