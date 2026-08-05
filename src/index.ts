@@ -309,7 +309,8 @@ export default class WakaTimePlugin extends siyuan.Plugin {
 
     /* 操作系统名称 */
     public get wakatimeDefaultSystemName(): string {
-        return siyuanGlobal.siyuan?.config?.system?.os
+        return siyuanGlobal.require?.("os")?.hostname?.()
+            || siyuanGlobal.siyuan?.config?.system?.os
             || siyuanProcess?.platform
             // @ts-expect-error userAgentData 为实验性特性
             || globalThis.navigator.userAgentData?.platform
@@ -325,7 +326,8 @@ export default class WakaTimePlugin extends siyuan.Plugin {
 
     /* 内核名称 */
     public get wakatimeDefaultSystemArch(): string {
-        return siyuanProcess?.arch
+        return siyuanGlobal.require?.("os")?.arch?.()
+            || siyuanProcess?.arch
             || "unknown";
     }
 
