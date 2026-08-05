@@ -14,6 +14,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 export default {
+    GLOBAL_CONFIG_NAME: "global-config",
     OFFLINE_CACHE_PATH: "temp/.wakatime/cache", // 缓存文件目录路径 (worker)
     KERNEL_CACHE_PATH: ".cache", // 内核脚本缓存文件目录路径 (相对 storage 根)
     WAKATIME_DEFAULT_API_URL: "https://wakatime.com/api/v1", // 默认 API 地址

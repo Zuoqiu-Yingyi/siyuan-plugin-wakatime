@@ -15,6 +15,9 @@
         "wakatime",
         "wakapi"
     ],
+    "kernels": [
+        "all"
+    ],
     "backends": [
         "all"
     ],

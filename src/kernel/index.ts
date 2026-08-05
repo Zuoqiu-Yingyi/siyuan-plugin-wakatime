@@ -50,12 +50,17 @@ class KernelWakaTime {
 
     private readonly cache: WakaTimeCache<TCacheDatum>;
 
-    private readonly caches: InstanceType<typeof WakaTimeCache<TCacheDatum>>[] = [];
-
     private readonly timer = {
-        heartbeat: 0 as unknown as number,
-        cacheCheck: 0 as unknown as number,
-    };
+        /**
+         * 心跳定时器
+         */
+        heartbeat: undefined,
+
+        /**
+         * 缓存检查定时器
+         */
+        cacheCheck: undefined,
+    } as Record<string, any>;
 
     private readonly context: Context.IContext = {
         url: "",
@@ -156,15 +161,26 @@ class KernelWakaTime {
         return data.data;
     }
 
-    /* 更新定时器 */
-    private updateTimer(interval: number = this.config.wakatime.interval): void {
-        /* 心跳定时器 */
+    /* 清理定时器 */
+    private clearTimer(): void {
         clearInterval(this.timer.heartbeat);
-        this.timer.heartbeat = setInterval(() => void this.commit(), interval * 1_000) as unknown as number;
-
-        /* 缓存检查定时器 */
         clearInterval(this.timer.cacheCheck);
+    }
+
+    /* 启动定时器 */
+    private startTimer(interval: number = this.config.wakatime.interval): void {
+        this.timer.heartbeat = setInterval(() => void this.commit(), interval * 1_000) as unknown as number;
         this.timer.cacheCheck = setInterval(() => void this.checkCache(), CONSTANTS.CACHE_CHECK_INTERVAL) as unknown as number;
+    }
+
+    /* 加载配置 */
+    private async loadConfig(): Promise<void> {
+        try {
+            const obj = await this.siyuan.storage.get(CONSTANTS.GLOBAL_CONFIG_NAME);
+            const config = await obj.json();
+            Object.assign(this.config, config);
+        }
+        catch {}
     }
 
     /* 更新 wakatime 请求上下文 */
@@ -259,68 +275,62 @@ class KernelWakaTime {
 
     /* 检查缓存 */
     private async checkCache(): Promise<void> {
+        if (this.config.wakatime.heartbeats === false) {
+            return; // 若不提交数据, 则不检查缓存
+        }
+
         const cache_files_name = await this.cache.getAllCacheFileName(); // 所有缓存文件名称
 
-        /* 初始化历史缓存对象列表 */
-        this.caches.length = 0;
-        this.caches.push(...cache_files_name.map((filename) => new WakaTimeCache(
-            this.siyuanStorageBackend,
-            CONSTANTS.KERNEL_CACHE_PATH,
-            filename,
-        )));
+        for (const filename of cache_files_name) {
+            const cache = new WakaTimeCache(
+                this.siyuanStorageBackend,
+                CONSTANTS.KERNEL_CACHE_PATH,
+                filename,
+            );
 
-        /* 定时提交缓存 */
-        if (this.caches.length > 0) {
-            for (const cache of this.caches) {
-                if (this.config.wakatime.heartbeats) { // 提交
-                    await cache.load(); // 加载缓存文件
+            await cache.load(); // 加载缓存文件
 
-                    const exceptions: TCacheDatum[] = []; // 提交缓存时发生异常
+            const exceptions: TCacheDatum[] = []; // 提交缓存时发生异常
 
-                    /* 依次提交缓存内容 */
-                    for (let index = 0; index < cache.length; ++index) {
-                        const payload = cache.at(index)!;
+            /* 依次提交缓存内容 */
+            for (let index = 0; index < cache.length; ++index) {
+                const payload = cache.at(index)!;
 
-                        /* 提交缓存 */
-                        await this.sendHeartbeats(
-                            this.buildHeartbeatsRequest(payload),
-                            (request) => exceptions.push(request.payload),
-                        );
+                /* 提交缓存 */
+                await this.sendHeartbeats(
+                    this.buildHeartbeatsRequest(payload),
+                    (request) => exceptions.push(request.payload),
+                );
 
-                        if (index === 0 && exceptions.length > 0) {
-                            /**
-                             * 第一次提交出现问题
-                             * 可能用户处于离线状态
-                             * 本次不再进行提交
-                             */
-                            return;
-                        }
-
-                        /* 休眠 */
-                        await sleep(CONSTANTS.CACHE_COMMIT_INTERVAL);
-                    }
-
-                    if (exceptions.length > 0) {
-                        /* 存在异常, 保存异常提交到缓存文件 */
-                        cache.clear();
-                        cache.push(...exceptions);
-                        await cache.save();
-
-                        /**
-                         * 本轮提交存在异常
-                         * 可能用户网络状态可能不稳定
-                         * 本次不再进行提交
-                         */
-                        return;
-                    }
-                    else {
-                        /* 不存在异常, 删除缓存文件 */
-                        await cache.remove();
-                    }
-                }
-                else { // 不提交
+                if (index === 0 && exceptions.length > 0) {
+                    /**
+                     * 第一次提交出现问题
+                     * 可能用户处于离线状态
+                     * 本次不再进行提交
+                     */
                     return;
                 }
+
+                /* 休眠 */
+                await sleep(CONSTANTS.CACHE_COMMIT_INTERVAL);
+            }
+
+            if (exceptions.length > 0) {
+                /* 存在异常, 保存异常提交到缓存文件 */
+                cache.clear();
+                cache.push(...exceptions);
+                await cache.save();
+
+                /**
+                 * 本轮提交存在异常
+                 * 可能用户网络状态可能不稳定
+                 * 本次不再进行提交
+                 */
+                return;
+            }
+            else {
+                /* 不存在异常, 删除缓存文件 */
+                await cache.remove();
             }
         }
     }
@@ -547,8 +557,42 @@ class KernelWakaTime {
         await this.siyuan.storage.put(`${directory}/.gitkeep`, "");
     }
 
+    /* 获取块信息 */
+    private async getBlockInfo(id: BlockID): Promise<Context.IRoot | null> {
+        try {
+            /* 获取块对应的文档信息 */
+            let root_id = this.context.blocks.get(id);
+            let root_info = root_id != null ? this.context.roots.get(root_id) : undefined;
+            if (!root_info) {
+                const block_info = await this.kernelFetch<{ box: string; path: string; rootID: string }>(
+                    "/api/block/getBlockInfo",
+                    { id },
+                );
+                root_id = block_info.rootID;
+                root_info = {
+                    id: root_id,
+                    box: block_info.box,
+                    path: block_info.path,
+                    events: [],
+                };
+
+                this.context.blocks.set(id, root_id);
+                this.context.roots.set(root_id, root_info);
+            }
+
+            return root_info;
+        }
+        catch {
+            /* 块删除事件导致无法查询到对应的块 — 静默忽略 */
+            return null;
+        }
+    }
+
     /* 加载 */
     private async onload(): Promise<void> {
+        /* 加载配置 */
+        await this.loadConfig();
+
         /* 创建缓存目录 */
         await this.createCacheDirectory();
 
@@ -561,22 +605,21 @@ class KernelWakaTime {
         /* 绑定 RPC 方法 */
         await this.siyuan.rpc.bind("onload", this.rpcOnload.bind(this), "Initialize the wakatime kernel plugin.");
         await this.siyuan.rpc.bind("unload", this.rpcUnload.bind(this), "Stop the wakatime kernel plugin.");
-        await this.siyuan.rpc.bind("restart", this.rpcRestart.bind(this), "Restart timers and context.");
         await this.siyuan.rpc.bind("updateConfig", this.rpcUpdateConfig.bind(this), "Update config and request context.");
+        await this.siyuan.rpc.bind("updateNotebooks", this.rpcUpdateNotebooks.bind(this), "Update the list of notebooks.");
         await this.siyuan.rpc.bind("addViewEvent", this.rpcAddViewEvent.bind(this), "Record a view heartbeat (id only).");
         await this.siyuan.rpc.bind("addEditEvent", this.rpcAddEditEvent.bind(this), "Record an edit heartbeat (id only).");
     }
 
     /* 卸载 */
     private async onunload(): Promise<void> {
-        clearInterval(this.timer.heartbeat);
-        clearInterval(this.timer.cacheCheck);
+        this.clearTimer();
         await this.commit();
 
         await this.siyuan.rpc.unbind("onload");
         await this.siyuan.rpc.unbind("unload");
-        await this.siyuan.rpc.unbind("restart");
         await this.siyuan.rpc.unbind("updateConfig");
+        await this.siyuan.rpc.unbind("updateNotebooks");
         await this.siyuan.rpc.unbind("addViewEvent");
         await this.siyuan.rpc.unbind("addEditEvent");
     }
@@ -589,15 +632,13 @@ class KernelWakaTime {
 
     /* RPC: unload */
     private async rpcUnload(): Promise<void> {
-        clearInterval(this.timer.heartbeat);
-        clearInterval(this.timer.cacheCheck);
+        this.clearTimer();
         await this.commit();
     }
 
-    /* RPC: restart */
-    private rpcRestart(): void {
-        this.updateTimer();
-        this.updateContext();
+    /* RPC: updateNotebooks */
+    private async rpcUpdateNotebooks(): Promise<void> {
+        await this.updateNotebook();
     }
 
     /* RPC: updateConfig */
@@ -605,35 +646,18 @@ class KernelWakaTime {
         config: IConfig,
         context: Pick<Context.IContext, "headers" | "language" | "project" | "url">,
     ): void {
+        this.clearTimer();
         Object.assign(this.config, config);
         Object.assign(this.context, context);
+        this.updateContext();
+        this.startTimer();
     }
 
     /* RPC: addViewEvent — 与 addEditEvent 统一, 只传 id, 内核内部解析块信息 */
     private async rpcAddViewEvent(id: BlockID): Promise<void> {
-        try {
+        const root_info = await this.getBlockInfo(id);
+        if (root_info != null) {
             const time = this.now();
-
-            /* 复用 addEditEvent 已建立的块映射, 若缺失则补查 getBlockInfo */
-            let root_id = this.context.blocks.get(id);
-            let root_info = root_id && this.context.roots.get(root_id);
-            if (!root_info) {
-                const block_info = await this.kernelFetch<{ box: string; path: string; rootID: string }>(
-                    "/api/block/getBlockInfo",
-                    { id },
-                );
-                root_id = block_info.rootID;
-                root_info = {
-                    id: root_id,
-                    box: block_info.box,
-                    path: block_info.path,
-                    events: [],
-                };
-
-                this.context.blocks.set(id, root_id);
-                this.context.roots.set(root_id, root_info);
-            }
-
             this.addEvent({
                 id: root_info.id,
                 box: root_info.box,
@@ -642,37 +666,13 @@ class KernelWakaTime {
                 is_write: false,
             });
         }
-        catch {
-            /* 块删除事件导致无法查询到对应的块 — 静默忽略 */
-        }
     }
 
     /* RPC: addEditEvent */
     private async rpcAddEditEvent(id: BlockID): Promise<void> {
-        try {
+        const root_info = await this.getBlockInfo(id);
+        if (root_info != null) {
             const time = this.now();
-
-            /* 获取块对应的文档信息 */
-            let root_id = this.context.blocks.get(id);
-            let root_info = root_id && this.context.roots.get(root_id);
-            if (!root_info) {
-                const block_info = await this.kernelFetch<{ box: string; path: string; rootID: string }>(
-                    "/api/block/getBlockInfo",
-                    { id },
-                );
-                root_id = block_info.rootID;
-                root_info = {
-                    id: root_id,
-                    box: block_info.box,
-                    path: block_info.path,
-                    events: [],
-                };
-
-                this.context.blocks.set(id, root_id);
-                this.context.roots.set(root_id, root_info);
-            }
-
-            /* 添加编辑事件 */
             this.addEvent({
                 id: root_info.id,
                 box: root_info.box,
@@ -680,10 +680,6 @@ class KernelWakaTime {
                 time,
                 is_write: true,
             });
-        }
-        catch {
-            /* 块删除事件导致无法查询到对应的块 — 静默忽略 */
-            /* Block deleted — silently ignore (mirrors worker's KernelError swallow). */
         }
     }
 }

@@ -37,9 +37,11 @@ import Settings from "./components/Settings.svelte";
 import type { ISiyuanGlobal } from "@workspace/types/siyuan";
 import type {
     IClickEditorContentEvent,
+    IClosedNotebookEvent,
     IDestroyProtyleEvent,
     ILoadedProtyleDynamicEvent,
     ILoadedProtyleStaticEvent,
+    IOpenedNotebookEvent,
     ISwitchProtyleEvent,
     IWebSocketMainEvent,
 } from "@workspace/types/siyuan/events";
@@ -55,7 +57,7 @@ const siyuanGlobal = globalThis as ISiyuanGlobal;
 const siyuanProcess = siyuanGlobal.process;
 
 export default class WakaTimePlugin extends siyuan.Plugin {
-    static readonly GLOBAL_CONFIG_NAME = "global-config";
+    static readonly GLOBAL_CONFIG_NAME = CONSTANTS.GLOBAL_CONFIG_NAME;
 
     // @ts-expect-error ignore original type
     declare public readonly i18n: I18N;
@@ -94,9 +96,6 @@ export default class WakaTimePlugin extends siyuan.Plugin {
             })
             .catch((error) => this.logger.error(error))
             .finally(async () => {
-                /* 监听内核插件状态变化, 进入 running 后初始化 */
-                this.eventBus.on("kernel-plugin-state-change", this.onKernelPluginStateChange);
-
                 /* 总线 */
                 this.eventBus.on("ws-main", this.webSocketMainEventListener);
 
@@ -108,6 +107,10 @@ export default class WakaTimePlugin extends siyuan.Plugin {
 
                 /* 编辑区点击 */
                 this.eventBus.on("click-editorcontent", this.clickEditorContentEventListener);
+
+                /* 笔记本状态变化 */
+                this.eventBus.on("opened-notebook", this.notebookEventListener);
+                this.eventBus.on("closed-notebook", this.notebookEventListener);
             });
     }
 
@@ -115,15 +118,16 @@ export default class WakaTimePlugin extends siyuan.Plugin {
     }
 
     public override onunload(): void {
-        this.eventBus.off("kernel-plugin-state-change", this.onKernelPluginStateChange);
         this.eventBus.off("ws-main", this.webSocketMainEventListener);
         this.eventBus.off("loaded-protyle-static", this.protyleEventListener);
         this.eventBus.off("loaded-protyle-dynamic", this.protyleEventListener);
         this.eventBus.off("switch-protyle", this.protyleEventListener);
         this.eventBus.off("destroy-protyle", this.protyleEventListener);
         this.eventBus.off("click-editorcontent", this.clickEditorContentEventListener);
+        this.eventBus.off("opened-notebook", this.notebookEventListener);
+        this.eventBus.off("closed-notebook", this.notebookEventListener);
 
-        void (this.kernel.rpc.call.unload as any)();
+        this.kernel.rpc.call.unload?.();
     }
 
     public override openSetting(): void {
@@ -171,18 +175,9 @@ export default class WakaTimePlugin extends siyuan.Plugin {
         return this.saveData(WakaTimePlugin.GLOBAL_CONFIG_NAME, this.config);
     }
 
-    /* 初始化通讯桥 */
-    protected onKernelPluginStateChange = async (e: { detail: { code: number; description: string } }): Promise<void> => {
-        if (e.detail.code === 2 && !this.kernelPluginReady) { // running
-            this.kernelPluginReady = true;
-            await (this.kernel.rpc.call.onload as any)();
-            await this.updateWorkerConfig();
-        }
-    };
-
     /* 更新内核插件配置 */
     public async updateWorkerConfig(): Promise<void> {
-        await (this.kernel.rpc.call.updateConfig as any)(
+        await this.kernel.rpc.call.updateConfig?.(
             this.config,
             {
                 url: this.wakatimeHeartbeatsApiUrl,
@@ -191,7 +186,6 @@ export default class WakaTimePlugin extends siyuan.Plugin {
                 language: this.wakatimeLanguage,
             },
         );
-        await (this.kernel.rpc.call.restart as any)();
     }
 
     /* 总线事件监听器 */
@@ -217,7 +211,7 @@ export default class WakaTimePlugin extends siyuan.Plugin {
                         case "setAttrs":
                         case "doUpdateUpdated":
                             if (operation.id) {
-                                void (this.kernel.rpc.call.addEditEvent as any)(operation.id);
+                                this.kernel.rpc.call.addEditEvent?.(operation.id);
                             }
                             break;
                         case "delete": // 忽略删除操作 (避免无法查询块信息)
@@ -239,7 +233,7 @@ export default class WakaTimePlugin extends siyuan.Plugin {
         const protyle = e.detail.protyle;
 
         if (protyle.notebookId && protyle.path && protyle.block.rootID) {
-            void (this.kernel.rpc.call.addViewEvent as any)(protyle.block.rootID);
+            this.kernel.rpc.call.addViewEvent?.(protyle.block.rootID);
         }
     };
 
@@ -248,8 +242,14 @@ export default class WakaTimePlugin extends siyuan.Plugin {
         // this.logger.debug(e);
         const protyle = e.detail.protyle;
         if (protyle.notebookId && protyle.path && protyle.block.rootID) {
-            void (this.kernel.rpc.call.addViewEvent as any)(protyle.block.rootID);
+            this.kernel.rpc.call.addViewEvent?.(protyle.block.rootID);
         }
+    };
+
+    /* 笔记本事件监听器 */
+    protected readonly notebookEventListener = (e: IClosedNotebookEvent | IOpenedNotebookEvent) => {
+        // this.logger.debug(e);
+        this.kernel.rpc.call.updateNotebooks?.();
     };
 
     /* 测试服务状态 */

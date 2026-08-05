@@ -13,8 +13,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import moment from "@workspace/utils/date/moment";
-
 import JSONL from "@/utils/jsonl";
 
 import type { Heartbeats } from "@/types/wakatime";
@@ -49,10 +47,12 @@ export class WakaTimeCache<T extends object = TCacheDatum> implements TCache<T> 
      */
     public static buildCacheFileName(
         date: Date = new Date(),
-        format: string = "YYYY-MM-DD",
         extension: string = "jsonl",
     ): string {
-        return `${moment(date).format(format)}.${extension}`;
+        const year = date.getFullYear().toString().padStart(4, "0");
+        const month = (date.getMonth() + 1).toString().padStart(2, "0");
+        const day = date.getDate().toString().padStart(2, "0");
+        return `${year}-${month}-${day}.${extension}`;
     }
 
     protected filepath!: string; // 缓存文件路径
