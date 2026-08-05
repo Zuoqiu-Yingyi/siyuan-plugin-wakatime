@@ -17,15 +17,14 @@ import { Client } from "@siyuan-community/siyuan-sdk";
 import siyuan from "siyuan";
 import { mount } from "svelte";
 
+import ToolbarItem from "@workspace/components/siyuan/misc/ToolbarItem.svelte";
 import {
     FLAG_MOBILE,
 } from "@workspace/utils/env/front-end";
 import { Logger } from "@workspace/utils/logger";
 import { mergeIgnoreArray } from "@workspace/utils/misc/merge";
-import { sleep } from "@workspace/utils/misc/sleep";
 import { parse } from "@workspace/utils/path/browserify";
 import { normalize } from "@workspace/utils/path/normalize";
-import { WorkerBridgeMaster } from "@workspace/utils/worker/bridge/master";
 
 import manifest from "~/public/plugin.json";
 
@@ -34,14 +33,17 @@ import icon_wakatime from "./assets/symbols/icon-wakatime.symbol?raw";
 import { DEFAULT_CONFIG } from "./configs/default";
 import CONSTANTS from "./constants";
 
+import { statusBarItemProps } from "./components/props.svelte";
 import Settings from "./components/Settings.svelte";
 
 import type { ISiyuanGlobal } from "@workspace/types/siyuan";
 import type {
     IClickEditorContentEvent,
+    IClosedNotebookEvent,
     IDestroyProtyleEvent,
     ILoadedProtyleDynamicEvent,
     ILoadedProtyleStaticEvent,
+    IOpenedNotebookEvent,
     ISwitchProtyleEvent,
     IWebSocketMainEvent,
 } from "@workspace/types/siyuan/events";
@@ -50,15 +52,15 @@ import type { ITransaction } from "@workspace/types/siyuan/transaction";
 import type { IConfig } from "./types/config";
 import type {
     Context,
+    Status,
 } from "./types/wakatime";
-import type { THandlers } from "./workers/wakatime";
 
 const siyuanGlobal = globalThis as ISiyuanGlobal;
 // eslint-disable-next-line node/prefer-global/process
 const siyuanProcess = siyuanGlobal.process;
 
 export default class WakaTimePlugin extends siyuan.Plugin {
-    static readonly GLOBAL_CONFIG_NAME = "global-config";
+    static readonly GLOBAL_CONFIG_NAME = CONSTANTS.GLOBAL_CONFIG_NAME;
 
     // @ts-expect-error ignore original type
     declare public readonly i18n: I18N;
@@ -70,11 +72,9 @@ export default class WakaTimePlugin extends siyuan.Plugin {
     protected readonly SETTINGS_DIALOG_ID: string;
 
     public config: IConfig = DEFAULT_CONFIG;
-    protected worker?: InstanceType<typeof Worker>; // worker 桥
-    protected bridge?: InstanceType<typeof WorkerBridgeMaster>; // worker 桥
-
-    protected heartbeatTimer: number = 0; // 心跳定时器
-    protected cacheCheckTimer: number = 0; // 缓存检查定时器
+    protected kernelPluginReady = false;
+    protected topBarButton?: HTMLElement; // 顶部菜单栏按钮
+    protected statusBarButton?: HTMLElement; // 状态栏按钮
 
     constructor(options: any) {
         super(options);
@@ -85,7 +85,7 @@ export default class WakaTimePlugin extends siyuan.Plugin {
         this.SETTINGS_DIALOG_ID = `${this.name}-settings-dialog`;
     }
 
-    public override onload(): void {
+    public override async onload(): Promise<void> {
         // this.logger.debug(this);
 
         /* 注册图标 */
@@ -95,45 +95,55 @@ export default class WakaTimePlugin extends siyuan.Plugin {
         ].join(""));
 
         /* 加载配置文件 */
-        this.loadData(WakaTimePlugin.GLOBAL_CONFIG_NAME)
-            .then((config) => {
-                this.config = mergeIgnoreArray(DEFAULT_CONFIG, config || {}) as IConfig;
-            })
-            .catch((error) => this.logger.error(error))
-            .finally(async () => {
-                /* 初始化 channel */
-                this.initBridge();
-                const running = await this.isWorkerRunning();
+        try {
+            this.config = mergeIgnoreArray(DEFAULT_CONFIG, await this.loadData(WakaTimePlugin.GLOBAL_CONFIG_NAME) || {}) as IConfig;
+        }
+        catch (error) {
+            this.logger.error(error);
+        }
+        finally {
+            /* 总线 */
+            this.eventBus.on("ws-main", this.webSocketMainEventListener);
 
-                if (!running) { // worker 未正常运行
-                    /* 初始化 worker */
-                    this.initWorker();
+            /* 编辑器加载 */
+            this.eventBus.on("loaded-protyle-static", this.protyleEventListener);
+            this.eventBus.on("loaded-protyle-dynamic", this.protyleEventListener);
+            this.eventBus.on("switch-protyle", this.protyleEventListener);
+            this.eventBus.on("destroy-protyle", this.protyleEventListener);
 
-                    /* 等待 worker 正常运行 */
-                    while (await this.isWorkerRunning()) {
-                        await sleep(1_000);
-                    }
+            /* 编辑区点击 */
+            this.eventBus.on("click-editorcontent", this.clickEditorContentEventListener);
 
-                    /* 初始化 worker 配置 */
-                    await this.bridge?.call<THandlers["onload"]>("onload");
-                    await this.updateWorkerConfig();
-                }
+            /* 笔记本状态变化 */
+            this.eventBus.on("opened-notebook", this.notebookEventListener);
+            this.eventBus.on("closed-notebook", this.notebookEventListener);
+        }
 
-                /* 总线 */
-                this.eventBus.on("ws-main", this.webSocketMainEventListener);
+        /* 绑定 RPC */
+        this.kernel.rpc.bind(CONSTANTS.KERNEL_RPC_METHOD.WAKATIME_STATUS, this.updateWakatimeStatus as siyuan.TJsonRpcHandler<void>);
 
-                /* 编辑器加载 */
-                this.eventBus.on("loaded-protyle-static", this.protyleEventListener);
-                this.eventBus.on("loaded-protyle-dynamic", this.protyleEventListener);
-                this.eventBus.on("switch-protyle", this.protyleEventListener);
-                this.eventBus.on("destroy-protyle", this.protyleEventListener);
-
-                /* 编辑区点击 */
-                this.eventBus.on("click-editorcontent", this.clickEditorContentEventListener);
-            });
+        this.kernel.rpc.call[CONSTANTS.KERNEL_RPC_METHOD.ON_LOAD]?.();
     }
 
     public override onLayoutReady(): void {
+        /* 添加活动记录功能开关 */
+        this.topBarButton = this.addTopBar({
+            icon: "icon-wakatime",
+            title: this.wakatimeRecordStateText,
+            position: "right",
+            callback: this.toggleRecordState,
+        });
+        this.updateTopBarButtonState();
+
+        /* 添加状态栏图标 */
+        this.statusBarButton = this.addStatusBar({
+            element: globalThis.document.createElement("div"),
+            position: "right",
+        });
+        mount(ToolbarItem, {
+            target: this.statusBarButton,
+            props: statusBarItemProps,
+        });
     }
 
     public override onunload(): void {
@@ -143,18 +153,8 @@ export default class WakaTimePlugin extends siyuan.Plugin {
         this.eventBus.off("switch-protyle", this.protyleEventListener);
         this.eventBus.off("destroy-protyle", this.protyleEventListener);
         this.eventBus.off("click-editorcontent", this.clickEditorContentEventListener);
-
-        if (this.worker) {
-            this.bridge
-                ?.call<THandlers["unload"]>("unload")
-                .then(() => {
-                    this.bridge?.terminate();
-                    this.worker?.terminate();
-                });
-        }
-        else {
-            this.bridge?.terminate();
-        }
+        this.eventBus.off("opened-notebook", this.notebookEventListener);
+        this.eventBus.off("closed-notebook", this.notebookEventListener);
     }
 
     public override openSetting(): void {
@@ -182,9 +182,9 @@ export default class WakaTimePlugin extends siyuan.Plugin {
     }
 
     /* 清理缓存 */
-    public async clearCache(directory: string = CONSTANTS.OFFLINE_CACHE_PATH): Promise<boolean> {
+    public async clearCache(): Promise<boolean> {
         try {
-            await this.client.removeFile({ path: directory });
+            await this.kernel.rpc.call.clearCache?.();
             return true;
         }
         catch (error) {
@@ -198,63 +198,36 @@ export default class WakaTimePlugin extends siyuan.Plugin {
         if (config && config !== this.config) {
             this.config = config;
         }
+        this.updateTopBarButtonState();
         await this.updateWorkerConfig();
         return this.saveData(WakaTimePlugin.GLOBAL_CONFIG_NAME, this.config);
     }
 
-    /* 初始化通讯桥 */
-    protected initBridge(): void {
-        this.bridge?.terminate();
-        this.bridge = new WorkerBridgeMaster(
-            new BroadcastChannel(CONSTANTS.WAKATIME_WORKER_BROADCAST_CHANNEL_NAME),
-            this.logger,
-        );
-    }
-
-    /* 初始化 worker */
-    protected initWorker(): void {
-        this.worker?.terminate();
-        this.worker = new Worker(
-            `${globalThis.document.baseURI}plugins/${this.name}/workers/${CONSTANTS.WAKATIME_WORKER_FILE_NAME}.js?v=${manifest.version}`,
-            {
-                type: "module",
-                name: this.name,
-                credentials: "include",
-            },
-        );
-    }
-
-    /* web worker 是否正在运行 */
-    protected async isWorkerRunning(): Promise<boolean> {
-        try {
-            /* 若 bridge 未初始化, 需要初始化 */
-            if (!this.bridge)
-                this.initBridge();
-
-            /* 检测 Worker 是否已加载完成 */
-            await this.bridge!.ping();
-            return true;
-        }
-        catch (error) {
-            void error;
-            return false;
-        }
-    }
-
-    /* 更新 worker 配置 */
+    /* 更新内核插件配置 */
     public async updateWorkerConfig(): Promise<void> {
-        await this.bridge?.call<THandlers["updateConfig"]>(
-            "updateConfig",
-            this.config,
-            {
-                url: this.wakatimeHeartbeatsApiUrl,
-                headers: this.wakatimeHeaders,
-                project: this.wakatimeProject,
-                language: this.wakatimeLanguage,
-            },
-        );
-        await this.bridge?.call<THandlers["restart"]>("restart");
+        await this.kernel.rpc.call[CONSTANTS.KERNEL_RPC_METHOD.UPDATE_CONFIG]?.(this.config);
     }
+
+    /**
+     * 更新顶部菜单栏按钮状态
+     */
+    protected updateTopBarButtonState(): void {
+        if (this.topBarButton) {
+            const enable = this.config.wakatime.record;
+
+            /* 更改顶部菜单栏按钮文本 */
+            this.topBarButton.ariaLabel = this.wakatimeRecordStateText;
+
+            /* 更改顶部菜单栏按钮状态 */
+            this.topBarButton.classList.toggle("toolbar__item--active", enable);
+        }
+    }
+
+    /* 切换活动记录状态 */
+    protected readonly toggleRecordState = () => {
+        this.config.wakatime.record = !this.config.wakatime.record;
+        this.updateConfig();
+    };
 
     /* 总线事件监听器 */
     protected readonly webSocketMainEventListener = (e: IWebSocketMainEvent) => {
@@ -278,11 +251,8 @@ export default class WakaTimePlugin extends siyuan.Plugin {
                         case "unfoldHeading":
                         case "setAttrs":
                         case "doUpdateUpdated":
-                            if (operation.id) {
-                                this.bridge?.call<THandlers["addEditEvent"]>(
-                                    "addEditEvent",
-                                    operation.id,
-                                );
+                            if (this.config.wakatime.record && operation.id) {
+                                this.kernel.rpc.call[CONSTANTS.KERNEL_RPC_METHOD.ADD_EDIT_EVENT]?.(operation.id, this.wakatimeEventContext);
                             }
                             break;
                         case "delete": // 忽略删除操作 (避免无法查询块信息)
@@ -300,18 +270,9 @@ export default class WakaTimePlugin extends siyuan.Plugin {
     /* 编辑器加载事件监听器 */
     protected readonly protyleEventListener = (e: IDestroyProtyleEvent | ILoadedProtyleDynamicEvent | ILoadedProtyleStaticEvent | ISwitchProtyleEvent) => {
         // this.logger.debug(e);
-
         const protyle = e.detail.protyle;
-
-        if (protyle.notebookId && protyle.path && protyle.block.rootID) {
-            this.bridge?.call<THandlers["addViewEvent"]>(
-                "addViewEvent",
-                {
-                    id: protyle.block.rootID,
-                    box: protyle.notebookId,
-                    path: protyle.path,
-                },
-            );
+        if (this.config.wakatime.record && protyle.block.rootID) {
+            this.kernel.rpc.call[CONSTANTS.KERNEL_RPC_METHOD.ADD_VIEW_EVENT]?.(protyle.block.rootID, this.wakatimeEventContext);
         }
     };
 
@@ -319,39 +280,32 @@ export default class WakaTimePlugin extends siyuan.Plugin {
     protected readonly clickEditorContentEventListener = (e: IClickEditorContentEvent) => {
         // this.logger.debug(e);
         const protyle = e.detail.protyle;
-        if (protyle.notebookId && protyle.path && protyle.block.rootID) {
-            this.bridge?.call<THandlers["addViewEvent"]>(
-                "addViewEvent",
-                {
-                    id: protyle.block.rootID,
-                    box: protyle.notebookId,
-                    path: protyle.path,
-                },
-            );
+        if (this.config.wakatime.record && protyle.block.rootID) {
+            this.kernel.rpc.call[CONSTANTS.KERNEL_RPC_METHOD.ADD_VIEW_EVENT]?.(protyle.block.rootID, this.wakatimeEventContext);
         }
+    };
+
+    /* 笔记本事件监听器 */
+    protected readonly notebookEventListener = (_e: IClosedNotebookEvent | IOpenedNotebookEvent) => {
+        // this.logger.debug(e);
+        this.kernel.rpc.call[CONSTANTS.KERNEL_RPC_METHOD.UPDATE_NOTEBOOKS]?.();
+    };
+
+    /* 更新 Wakatime 状态 */
+    protected readonly updateWakatimeStatus = (status: Status.IResponse) => {
+        // this.logger.debug(`wakatime-status:`, status);
+        statusBarItemProps.ariaLabel = status.data.grand_total.text;
     };
 
     /* 测试服务状态 */
     public async testService(): Promise<boolean> {
-        try {
-            const response = await this.client.forwardProxy({
-                url: this.wakatimeStatusBarApiUrl,
-                method: "GET",
-                headers: [this.wakatimeHeaders],
-                timeout: this.config.wakatime.timeout * 1_000,
-            });
-            if (response.data.status >= 200 && response.data.status < 300) {
-                return true;
-            }
-            else {
-                this.logger.warn(response);
-                return false;
-            };
+        const response = await this.kernel.rpc.call[CONSTANTS.KERNEL_RPC_METHOD.WAKATIME_STATUS]?.();
+        if (response != null) {
+            return true;
         }
-        catch (error) {
-            void error;
+        else {
             return false;
-        }
+        };
     }
 
     /* 获取一个新 ID */
@@ -398,7 +352,8 @@ export default class WakaTimePlugin extends siyuan.Plugin {
 
     /* 操作系统名称 */
     public get wakatimeDefaultSystemName(): string {
-        return siyuanGlobal.siyuan?.config?.system?.os
+        return siyuanGlobal.require?.("os")?.hostname?.()
+            || siyuanGlobal.siyuan?.config?.system?.os
             || siyuanProcess?.platform
             // @ts-expect-error userAgentData 为实验性特性
             || globalThis.navigator.userAgentData?.platform
@@ -414,16 +369,9 @@ export default class WakaTimePlugin extends siyuan.Plugin {
 
     /* 内核名称 */
     public get wakatimeDefaultSystemArch(): string {
-        return siyuanProcess?.arch
+        return siyuanGlobal.require?.("os")?.arch?.()
+            || siyuanProcess?.arch
             || "unknown";
-    }
-
-    public get wakatimeHeaders(): Context.IHeaders {
-        return {
-            "Authorization": this.wakatimeAuthorization,
-            "User-Agent": this.wakatimeUserAgent,
-            "X-Machine-Name": this.wakatimeHostname,
-        };
     }
 
     public get wakatimeWorkspaceDirectory(): string {
@@ -453,11 +401,6 @@ export default class WakaTimePlugin extends siyuan.Plugin {
     /* wakatime statusbar url */
     public get wakatimeHeartbeatsApiUrl(): string {
         return `${this.wakatimeApiBaseUrl}/${CONSTANTS.WAKATIME_HEARTBEATS_PATHNAME}`;
-    }
-
-    /* wakatime Authorization */
-    public get wakatimeAuthorization(): string {
-        return `Basic ${btoa(this.config?.wakatime?.api_key)}`;
     }
 
     /* wakatime Hostname */
@@ -500,5 +443,21 @@ export default class WakaTimePlugin extends siyuan.Plugin {
     public get wakatimeSystemArch(): string {
         return this.config?.wakatime?.system_arch
             || this.wakatimeDefaultSystemArch;
+    }
+
+    /* 事件上下文 */
+    public get wakatimeEventContext(): Context.IEventContext {
+        return {
+            project: this.wakatimeProject,
+            language: this.wakatimeLanguage,
+            hostname: this.wakatimeHostname,
+            useragent: this.wakatimeUserAgent,
+        };
+    }
+
+    private get wakatimeRecordStateText(): string {
+        return this.config.wakatime.record
+            ? this.i18n.topBar.record.enabled
+            : this.i18n.topBar.record.disabled;
     }
 };

@@ -134,7 +134,72 @@ export namespace Heartbeats {
             Context.IHeaders,
         ];
         timeout: number;
-        payload: IAction | IAction[];
+        payload: IAction[];
+    }
+}
+
+/**
+ * 状态信息
+ * REF: https://wakatime.com/developers#status_bar
+ * REF: https://github.com/wakatime/browser-wakatime/blob/master/src/types/summaries.ts
+ */
+export namespace Status {
+    export interface IRequest extends types.kernel.api.network.forwardProxy.IPayload {
+        method: "GET";
+        headers: [
+            Pick<Context.IHeaders, "Authorization">,
+        ];
+        timeout: number;
+    }
+    export interface IResponse {
+        cached_at: string;
+        data: Summary;
+    }
+
+    export interface Summaries {
+        data: Summary[];
+        end: string;
+        start: string;
+    }
+
+    export interface Summary {
+        categories: Category[];
+        dependencies: Category[];
+        editors: Category[];
+        grand_total: GrandTotal;
+        languages: Category[];
+        machines: Category[];
+        operating_systems: Category[];
+        projects: Category[];
+        range: Range;
+    }
+
+    export interface Category {
+        digital: string;
+        hours: number;
+        machine_name_id?: string;
+        minutes: number;
+        name: string;
+        percent: number;
+        seconds: number;
+        text: string;
+        total_seconds: number;
+    }
+
+    export interface GrandTotal {
+        digital: string;
+        hours: number;
+        minutes: number;
+        text: string;
+        total_seconds: number;
+    }
+
+    interface Range {
+        date: string;
+        end: string;
+        start: string;
+        text: string;
+        timezone: string;
     }
 }
 
@@ -149,6 +214,7 @@ export namespace Context {
     export interface IEvent {
         time: number; // UNIX 时间戳 (单位: s)
         is_write: boolean; // 是否写入
+        context: IEventContext; // 上下文
     }
 
     export interface IRoot {
@@ -161,10 +227,7 @@ export namespace Context {
     export interface IContext {
         url: string;
         method: "POST";
-        headers: IHeaders;
-
-        project: string;
-        language: string;
+        Authorization: string;
 
         includeID: (RegExp | string)[];
         excludeID: (RegExp | string)[];
@@ -173,6 +236,12 @@ export namespace Context {
 
         blocks: Map<BlockID, BlockID>; // block -> root
         roots: Map<BlockID, IRoot>; // root -> { box, path }
-        actions: Heartbeats.IAction[]; // 待提交的活动
+    }
+
+    export interface IEventContext {
+        project: string; // 项目名称
+        language: string; // 语言名称
+        hostname: string; // 设备名
+        useragent: string; // 用户代理字段
     }
 }

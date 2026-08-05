@@ -36,7 +36,8 @@ export interface IWakaTime {
     include: string[]; // 包含列表, 在 entity 中过滤, 为空则包含所有笔记本与文档, "/foo/" 表示正则表达式
     exclude: string[]; // 排除列表, 在 entity 中过滤, 为空则不排除任何笔记本与文档, "/foo/" 表示正则表达式
 
-    heartbeats: boolean; // 是否开启心跳连接
+    record: boolean; // 是否开启本地记录
+    heartbeats: boolean; // 是否开启数据推送
     project: string; // 项目名称
     language: string; // 语言名称
     hostname: string; // 设备名

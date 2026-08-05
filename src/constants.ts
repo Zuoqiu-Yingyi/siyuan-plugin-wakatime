@@ -14,7 +14,9 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 export default {
-    OFFLINE_CACHE_PATH: "temp/.wakatime/cache", // 缓存文件目录路径
+    GLOBAL_CONFIG_NAME: "global-config",
+    OFFLINE_CACHE_PATH: "data/storage/petal/wakatime/.cache", // 缓存文件目录路径 (worker)
+    KERNEL_CACHE_PATH: ".cache", // 内核脚本缓存文件目录路径 (相对 storage 根)
     WAKATIME_DEFAULT_API_URL: "https://wakatime.com/api/v1", // 默认 API 地址
     WAKATIME_STATUS_BAR_PATHNAME: "users/current/statusbar/today", // 状态栏数据 API 地址
     WAKATIME_HEARTBEATS_PATHNAME: "users/current/heartbeats", // 心跳数据 API 路径地址
@@ -28,4 +30,14 @@ export default {
     WAKATIME_WORKER_BROADCAST_CHANNEL_NAME: "wakatime-worker", // web worker 广播通道名称
     CACHE_CHECK_INTERVAL: 5 * 60 * 1_000, // 缓存检查时间间隔
     CACHE_COMMIT_INTERVAL: 1 * 1_000, // 缓存每次提交时间间隔
-};
+    KERNEL_RPC_METHOD: {
+        ON_LOAD: "on-load", // 客户端插件加载完成
+        CLEAR_CACHE: "clear-cache", // 清除缓存
+        UPDATE_CONFIG: "update-config", // 更新配置
+        UPDATE_NOTEBOOKS: "update-notebooks", // 更新笔记本列表
+        ADD_VIEW_EVENT: "add-view-event", // 添加查看事件
+        ADD_EDIT_EVENT: "add-edit-event", // 添加编辑事件
+
+        WAKATIME_STATUS: "wakatime-status", // WakaTime 状态
+    } as const,
+} as const;

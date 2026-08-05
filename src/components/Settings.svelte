@@ -71,8 +71,7 @@
             i18n.settings.generalSettings.cleanCache.title, // 标题
             i18n.settings.generalSettings.cleanCache.description, // 文本
             async () => {
-                await plugin.clearCache(); // 重置配置
-                globalThis.location.reload(); // 刷新页面
+                await plugin.clearCache(); // 清理缓存
             }, // 确认按钮回调
         );
     }
@@ -223,7 +222,24 @@
                 class:fn__none={tabs.wakatime[0]?.key !== focusTab}
                 data-type={tabs.wakatime[0]?.name}
             >
-                <!-- 心跳连接 -->
+                <!-- 数据记录 -->
+                <Item
+                    text={i18n.settings.wakatimeSettings.generalTab.record.description}
+                    title={i18n.settings.wakatimeSettings.generalTab.record.title}
+                >
+                    <Input
+                        slot="input"
+                        settingKey="Record"
+                        settingValue={config.wakatime.record}
+                        type={ItemType.checkbox}
+                        on:changed={async (e) => {
+                            config.wakatime.record = e.detail.value;
+                            await updated();
+                        }}
+                    />
+                </Item>
+
+                <!-- 数据推送 -->
                 <Item
                     text={i18n.settings.wakatimeSettings.generalTab.heartbeats.description}
                     title={i18n.settings.wakatimeSettings.generalTab.heartbeats.title}

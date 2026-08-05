@@ -13,21 +13,33 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import moment from "@workspace/utils/date/moment";
-
 import JSONL from "@/utils/jsonl";
 
-import type { Client } from "@siyuan-community/siyuan-sdk";
+import type { Context, Heartbeats } from "@/types/wakatime";
 
-import type { Heartbeats } from "@/types/wakatime";
-
-export type TCacheDatum = Heartbeats.IAction | Heartbeats.IAction[];
+export interface TCacheData {
+    payload: Heartbeats.IAction[];
+    context: Context.IEventContext;
+}
 
 export type TCache<T> = {
     [P in keyof Array<T>]?: Array<T>[P];
 };
 
-export class WakaTimeCache<T extends object = TCacheDatum> implements TCache<T> {
+/**
+ * 与 SiYuan 存储（文件读写）后端无关的接口。
+ * worker 端注入基于 SDK Client 的实现，内核端注入基于 siyuan.storage 的实现。
+ * Storage-backend-agnostic interface; the worker injects an SDK-Client adapter,
+ * the kernel injects a siyuan.storage adapter.
+ */
+export interface IStorageBackend {
+    putFile: (path: string, content: string) => Promise<unknown>;
+    getFile: (path: string) => Promise<string>;
+    readDir: (path: string) => Promise<{ name: string; isDir: boolean }[]>;
+    removeFile: (path: string) => Promise<unknown>;
+}
+
+export class WakaTimeCache<T extends object = TCacheData> implements TCache<T> {
     /**
      * 构造缓存文件名
      * @param date - 时间日期
@@ -38,21 +50,22 @@ export class WakaTimeCache<T extends object = TCacheDatum> implements TCache<T> 
      */
     public static buildCacheFileName(
         date: Date = new Date(),
-        format: string = "YYYY-MM-DD",
         extension: string = "jsonl",
     ): string {
-        return `${moment(date).format(format)}.${extension}`;
+        const year = date.getFullYear().toString().padStart(4, "0");
+        const month = (date.getMonth() + 1).toString().padStart(2, "0");
+        const day = date.getDate().toString().padStart(2, "0");
+        return `${year}-${month}-${day}.${extension}`;
     }
 
     protected filepath!: string; // 缓存文件路径
     protected filename!: string; // 缓存文件名
 
     protected readonly data: T[] = []; // 缓存的数据
-    protected readonly lines: string[] = []; // 缓存文件文本
 
     constructor(
-        public readonly client: InstanceType<typeof Client>, // 思源客户端
-        public readonly directory: string, // 缓存文件目录
+        private readonly backend: IStorageBackend, // 存储后端
+        private readonly directory: string, // 缓存文件目录
         filename?: string,
     ) {
         this.init(filename);
@@ -88,8 +101,8 @@ export class WakaTimeCache<T extends object = TCacheDatum> implements TCache<T> 
      * @returns 文件路径列表
      */
     public async getAllCacheFilePath(directory: string = this.directory): Promise<string[]> {
-        const files = await this.client.readDir({ path: directory });
-        return files.data
+        const files = await this.backend.readDir(directory);
+        return files
             .filter((file) => file.isDir === false)
             .map((file) => this.buildCacheFilePath(directory, file.name));
     }
@@ -100,10 +113,16 @@ export class WakaTimeCache<T extends object = TCacheDatum> implements TCache<T> 
      * @returns 文件路径列表
      */
     public async getAllCacheFileName(directory: string = this.directory): Promise<string[]> {
-        const files = await this.client.readDir({ path: directory });
-        return files.data
-            .filter((file) => file.isDir === false)
-            .map((file) => file.name);
+        try {
+            const files = await this.backend.readDir(directory);
+            return files
+                .filter((file) => file.isDir === false)
+                .map((file) => file.name);
+        }
+        catch (error) {
+            void error;
+            return [];
+        }
     }
 
     /**
@@ -119,7 +138,6 @@ export class WakaTimeCache<T extends object = TCacheDatum> implements TCache<T> 
 
     set length(value: number) {
         this.data.length = value;
-        this.lines.length = value;
     }
 
     at(index: number): T | undefined {
@@ -127,7 +145,7 @@ export class WakaTimeCache<T extends object = TCacheDatum> implements TCache<T> 
     }
 
     toString(): string {
-        return this.lines.join("\n");
+        return JSONL.stringify(this.data);
     }
 
     toLocaleString(): string {
@@ -136,23 +154,19 @@ export class WakaTimeCache<T extends object = TCacheDatum> implements TCache<T> 
 
     push(...items: T[]): number {
         this.data.push(...items);
-        this.lines.push(...items.map((datum) => JSON.stringify(datum)));
         return this.length;
     }
 
     pop(): T | undefined {
-        this.lines.pop();
         return this.data.pop();
     }
 
     shift(): T | undefined {
-        this.lines.shift();
         return this.data.shift();
     }
 
     unshift(...items: T[]): number {
         this.data.unshift(...items);
-        this.lines.unshift(...items.map((datum) => JSON.stringify(datum)));
         return this.length;
     }
 
@@ -208,10 +222,10 @@ export class WakaTimeCache<T extends object = TCacheDatum> implements TCache<T> 
      */
     public async load(filepath: string = this.filepath): Promise<boolean> {
         /* 检查文件是否存在 */
-        const files = await this.client.readDir({ path: this.directory });
-        if (files.data.some((file) => file.name === this.filename && file.isDir === false)) {
+        const files = await this.backend.readDir(this.directory);
+        if (files.some((file) => file.name === this.filename && file.isDir === false)) {
             /* 若文件存在则读取文件 */
-            const text = await this.client.getFile({ path: filepath }, "text");
+            const text = await this.backend.getFile(filepath);
             this.clear();
             this.push(...JSONL.parse<T>(text));
             return true;
@@ -226,10 +240,10 @@ export class WakaTimeCache<T extends object = TCacheDatum> implements TCache<T> 
      */
     public async remove(filepath: string = this.filepath): Promise<boolean> {
         /* 检查文件是否存在 */
-        const files = await this.client.readDir({ path: this.directory });
-        if (files.data.some((file) => file.name === this.filename && file.isDir === false)) {
+        const files = await this.backend.readDir(this.directory);
+        if (files.some((file) => file.name === this.filename && file.isDir === false)) {
             /* 若文件存在则移除文件 */
-            await this.client.removeFile({ path: filepath });
+            await this.backend.removeFile(filepath);
             return true;
         }
         return false;
@@ -253,7 +267,7 @@ export class WakaTimeCache<T extends object = TCacheDatum> implements TCache<T> 
                 const cache_file_name = WakaTimeCache.buildCacheFileName();
                 if (cache_file_name !== this.filename) { // 需要初始化缓存
                     /* 初始化缓存 */
-                    this.init();
+                    this.init(cache_file_name);
                 }
             }
 
@@ -268,18 +282,13 @@ export class WakaTimeCache<T extends object = TCacheDatum> implements TCache<T> 
     /**
      * 保存缓存数据为 jsonlines 文件
      * @param filepath - 文件路径
-     * @param terminator - 行终止符
      * @returns 是否持久化成功
      */
     protected async _save(
         filepath: string,
-        terminator: string = "\n",
     ): Promise<boolean> {
         if (this.data.length > 0) {
-            await this.client.putFile({
-                path: filepath,
-                file: this.lines.join(terminator),
-            });
+            await this.backend.putFile(filepath, this.toString());
             return true;
         }
         return false;

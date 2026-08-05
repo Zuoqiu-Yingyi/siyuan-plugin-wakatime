@@ -59,8 +59,8 @@ function build(mode: string): BuildOptions {
                     switch (chunkInfo.name) {
                         case "index":
                             return "[name].js";
-                        case "wakatime":
-                            return "workers/[name].js";
+                        case "kernel":
+                            return "[name].js";
 
                         default:
                             return "assets/[name]-[hash].js";
@@ -82,10 +82,10 @@ function build(mode: string): BuildOptions {
     };
 
     switch (mode) {
-        case "workers":
+        case "kernel":
             build.lib = {
-                entry: resolve(__dirname, "src/workers/wakatime.ts"),
-                fileName: "wakatime",
+                entry: resolve(import.meta.dirname, "src/kernel.ts"),
+                fileName: "kernel",
                 formats: ["es"],
             };
             build.emptyOutDir = false;
@@ -94,7 +94,7 @@ function build(mode: string): BuildOptions {
         case "plugin":
         default:
             build.lib = {
-                entry: resolve(__dirname, "src/index.ts"),
+                entry: resolve(import.meta.dirname, "src/index.ts"),
                 fileName: "index",
                 formats: ["cjs"],
             };

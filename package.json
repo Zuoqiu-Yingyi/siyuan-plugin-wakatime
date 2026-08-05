@@ -1,14 +1,14 @@
 {
     "name": "wakatime",
     "type": "module",
-    "version": "0.3.8",
+    "version": "0.4.0",
     "private": true,
     "scripts": {
         "dev": "vite",
-        "build": "npm run build:plugin && npm run build:workers",
-        "build:dev": "vite build --mode plugin --sourcemap inline && vite build --mode workers --sourcemap inline",
+        "build": "npm run build:plugin && npm run build:kernel",
+        "build:dev": "vite build --mode plugin --sourcemap inline && vite build --mode kernel --sourcemap inline",
         "build:plugin": "vite build --mode plugin",
-        "build:workers": "vite build --mode workers",
+        "build:kernel": "vite build --mode kernel",
         "preview": "vite preview",
         "lint": "eslint --max-warnings 0 .",
         "format": "eslint --fix .",
