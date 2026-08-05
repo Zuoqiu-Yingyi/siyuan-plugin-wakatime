@@ -1,0 +1,29 @@
+src/kernel/index.ts
+  s_f872ffe1c991ea::t_81f04c96fb446e 16-18,20-23,27,29-30,32,34-35,37-55,58-106,108-161,163-165,167-480,482-598,600-688
+  s_f872ffe1c991ea::t_76facd7beaf7c4 31
+  s_f872ffe1c991ea::t_481b597a7eb8f2 19
+  s_f872ffe1c991ea::t_2548ffe4f423c4 162,166
+  s_f872ffe1c991ea::t_85cea3a416f5e6 690
+  s_f872ffe1c991ea::t_2047be7fdec310 56-57
+  s_f872ffe1c991ea::t_14d38be778551e 24
+  s_f872ffe1c991ea::t_ad442ecefccc3d 107
+  s_f872ffe1c991ea::t_c94e0e0199f843 599
+  s_f872ffe1c991ea::t_079d5c65b6712f 28,33,36
+  s_f872ffe1c991ea::t_350fb25b7d4aa8 481
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.39-trip",
+  "base_commit_sha": "1d7007cc56bf49c9aa1deffac7d4d28c737b3919",
+  "prompts": {},
+  "sessions": {
+    "s_f872ffe1c991ea": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "716e2c4d-e980-404e-afd4-431e03bd92b1",
+        "model": "claude-glm-5.2"
+      },
+      "human_author": "Yingyi / 颖逸 <49649786+Zuoqiu-Yingyi@users.noreply.github.com>"
+    }
+  }
+}
