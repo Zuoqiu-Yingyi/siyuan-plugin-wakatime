@@ -35,6 +35,7 @@ import CONSTANTS from "./constants";
 
 import { statusBarItemProps } from "./components/props.svelte";
 import Settings from "./components/Settings.svelte";
+import StatusPanel from "./components/Status.svelte";
 
 import type { ISiyuanGlobal } from "@workspace/types/siyuan";
 import type {
@@ -297,6 +298,23 @@ export default class WakaTimePlugin extends siyuan.Plugin {
     protected readonly updateWakatimeStatus = (status: Status.IResponse) => {
         // this.logger.debug(`wakatime-status:`, status);
         statusBarItemProps.ariaLabel = status.data.grand_total.text;
+    };
+
+    /* 打开状态面板 */
+    protected readonly openStatusPanel = () => {
+        const dialog = new siyuan.Dialog({
+            title: `${this.i18n.status.title} <code class="fn__code">${this.name}</code>`,
+            content: `<div id="${this.STATUS_PANEL_DIALOG_ID}" class="fn__flex-column" />`,
+            width: FLAG_MOBILE ? "92vw" : "720px",
+            height: FLAG_MOBILE ? undefined : "640px",
+        });
+        const target = dialog.element.querySelector(`#${this.STATUS_PANEL_DIALOG_ID}`);
+        if (target) {
+            mount(StatusPanel, {
+                target,
+                props: statusProps,
+            });
+        }
     };
 
     /* 测试服务状态 */
