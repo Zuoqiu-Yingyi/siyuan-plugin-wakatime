@@ -1,0 +1,15 @@
+public/i18n/en.json
+  ai_agent 134,147-148,153-154
+public/i18n/zh-CN.json
+  ai_agent 134,143,147-148,153-154
+public/i18n/zh-TW.json
+  ai_agent 134,143,147-148,153-154
+src/components/Status.svelte
+  ai_agent 95-99,111-116,118-126,168-176,183,190,192
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.39-trip",
+  "base_commit_sha": "0aaa4bbb679cc49fb4ddebb4e78c3f54abd7d6e1",
+  "prompts": {}
+}
