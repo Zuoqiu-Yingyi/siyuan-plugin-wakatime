@@ -131,5 +131,23 @@
             "enabled": "WakaTime record 🟢",
             "title": "WakaTime record"
         }
+    },
+    "status": {
+        "title": "WakaTime Status",
+        "panel": {
+            "overview": "Overview",
+            "breakdown": "Breakdown"
+        },
+        "cachedAt": "Cached at",
+        "noData": "No data available. Check your API KEY and connection in settings.",
+        "dimension": {
+            "languages": "Languages",
+            "editors": "Editors",
+            "projects": "Projects",
+            "operating_systems": "Operating Systems",
+            "machines": "Machines",
+            "categories": "Categories",
+            "dependencies": "Dependencies"
+        }
     }
 }
