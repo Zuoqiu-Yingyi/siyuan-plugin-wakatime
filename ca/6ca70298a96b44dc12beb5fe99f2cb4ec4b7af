@@ -1,0 +1,19 @@
+public/i18n/en.json
+  ai_agent 15-19,135-137
+public/i18n/zh-CN.json
+  ai_agent 15-19,135-137
+src/components/DimensionChart.svelte
+  ai_agent 107-121
+src/index.ts
+  ai_agent 77-78,146-152,317
+src/components/Settings.svelte
+  ai_agent 42,181-194
+public/i18n/zh-TW.json
+  ai_agent 15-19,135-137
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.39-trip",
+  "base_commit_sha": "ca6ca70298a96b44dc12beb5fe99f2cb4ec4b7af",
+  "prompts": {}
+}
