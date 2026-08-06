@@ -1,5 +1,39 @@
 # Changelog
 
+## [0.4.1](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/compare/v0.4.0...v0.4.1) (2026-08-06)
+
+
+### Miscellaneous
+
+* release v0.4.1 ([013522e](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/013522e655e6594be0ed12e25358a46c696d242a))
+* **release:** bump version to 0.4.1 in package.json, plugin.json, and release-please-config.json ([a54367e](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/a54367e77f546a7e4a444158c6ad42e42068c43c))
+
+
+### Features
+
+* **i18n:** update status messages and add time range labels in English and Chinese translations ([0aaa4bb](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/0aaa4bbb679cc49fb4ddebb4e78c3f54abd7d6e1))
+* **wakatime:** add reusable DimensionChart component ([d389236](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/d389236333b617a0a0426dbe932588e048145a24))
+* **wakatime:** add status command and enhance settings with activity status information ([ca6ca70](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/ca6ca70298a96b44dc12beb5fe99f2cb4ec4b7af))
+* **wakatime:** add status panel dialog id constant ([a04a4b3](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/a04a4b3bd6a048e1341b93d296db6df66ec0afdd))
+* **wakatime:** add status panel i18n keys ([bf7228d](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/bf7228d2e143b99ec564cbab2f3569b534456682))
+* **wakatime:** enhance DimensionChart and Status components with improved props and rendering logic ([e417996](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/e417996f1047ad2a6296f2a29dea867b8c6d8c0a))
+* **wakatime:** implement status panel layout with charts ([bb96663](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/bb966638e05480797a3d762fce1a18bc5071f8cb))
+* **wakatime:** open status panel dialog from status bar ([1e7730b](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/1e7730b15c249a736927a34c9f20941fb0e7fda5))
+* **wakatime:** render chart via chartRender lure + manual echarts.init ([0e68461](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/0e68461471f42388982edd66e406275e8ef07f2c))
+* **wakatime:** update i18n files and enhance status handling in components ([1f6e633](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/1f6e633eaa1be80c16576f0e58b41a710ccba9fb))
+
+
+### Bug Fixes
+
+* **wakatime:** render chart title heading and suppress plugin capture warning ([77acf43](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/77acf431c352bc424c0c532910652fa76647d10f))
+* **wakatime:** type-safety, i18n guard, and lint in status panel components ([1318d41](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/1318d41c64fd4fb1162506af247b6f8a6d91665c))
+
+
+### Code Refactoring
+
+* **wakatime:** drop protyle-icons CSS hack from Status ([a845ffd](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/a845ffdcee78b13707f433185d560541c747d436))
+* **wakatime:** restore typed siyuanGlobal alias in DimensionChart ([b07a09a](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/b07a09acd0acc57ea059a2977fced187e3e6d225))
+
 ## [0.4.0](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/compare/v0.3.8...v0.4.0) (2026-08-05)
 
 
