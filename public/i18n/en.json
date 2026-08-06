@@ -12,6 +12,11 @@
                 "text": "Reset",
                 "title": "Reset settings options"
             },
+            "status": {
+                "description": "Query today's activity status information from the Wakapi/WakaTime service",
+                "text": "View",
+                "title": "Today's Activity Status"
+            },
             "title": "General"
         },
         "wakatimeSettings": {
@@ -124,6 +129,30 @@
             },
             "title": "Wakapi/WakaTime"
         }
+    },
+    "status": {
+        "cachedAt": "Status update time",
+        "command": {
+            "text": "View Today's Activity Status"
+        },
+        "dimension": {
+            "categories": "Categories",
+            "dependencies": "Dependencies",
+            "editors": "Editors",
+            "languages": "Languages",
+            "machines": "Machines",
+            "operating_systems": "Operating Systems",
+            "projects": "Projects"
+        },
+        "grandTotal": "Today's activity time",
+        "noData": "No data available",
+        "panel": {
+            "breakdown": "Breakdown",
+            "overview": "Overview"
+        },
+        "rangeEnd": "Activity end time",
+        "rangeStart": "Activity start time",
+        "title": "WakaTime Status"
     },
     "topBar": {
         "record": {

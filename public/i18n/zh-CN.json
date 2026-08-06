@@ -12,6 +12,11 @@
                 "text": "重置",
                 "title": "重置设置选项"
             },
+            "status": {
+                "description": "从 Wakapi/WakaTime 服务查询今日活动状态信息",
+                "text": "查看",
+                "title": "今日活动状态"
+            },
             "title": "常规设置"
         },
         "wakatimeSettings": {
@@ -124,6 +129,30 @@
             },
             "title": "Wakapi/WakaTime"
         }
+    },
+    "status": {
+        "cachedAt": "状态更新时间",
+        "command": {
+            "text": "查看今日活动状态"
+        },
+        "dimension": {
+            "categories": "活动类别",
+            "dependencies": "依赖",
+            "editors": "编辑器",
+            "languages": "编程语言",
+            "machines": "设备",
+            "operating_systems": "操作系统",
+            "projects": "项目"
+        },
+        "grandTotal": "今日活动时间",
+        "noData": "暂无数据",
+        "panel": {
+            "breakdown": "细分",
+            "overview": "概览"
+        },
+        "rangeEnd": "活动结束时间",
+        "rangeStart": "活动开始时间",
+        "title": "WakaTime 状态"
     },
     "topBar": {
         "record": {

@@ -43,8 +43,6 @@ export class WakaTimeCache<T extends object = TCacheData> implements TCache<T> {
     /**
      * 构造缓存文件名
      * @param date - 时间日期
-     * @param format - 时间日期格式化字符串
-     * REF: https://momentjs.com/docs/#/parsing/string-format/
      * @param extension - 文件扩展名
      * @returns 文件名
      */

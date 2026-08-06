@@ -35,6 +35,7 @@ import CONSTANTS from "./constants";
 
 import { statusBarItemProps } from "./components/props.svelte";
 import Settings from "./components/Settings.svelte";
+import StatusPanel from "./components/Status.svelte";
 
 import type { ISiyuanGlobal } from "@workspace/types/siyuan";
 import type {
@@ -70,8 +71,11 @@ export default class WakaTimePlugin extends siyuan.Plugin {
     public readonly client: InstanceType<typeof Client>;
 
     protected readonly SETTINGS_DIALOG_ID: string;
+    protected readonly STATUS_PANEL_DIALOG_ID: string; // 状态面板对话框 ID
 
     public config: IConfig = DEFAULT_CONFIG;
+    protected status?: Status.IResponse; // WakaTime 状态数据
+
     protected kernelPluginReady = false;
     protected topBarButton?: HTMLElement; // 顶部菜单栏按钮
     protected statusBarButton?: HTMLElement; // 状态栏按钮
@@ -83,6 +87,10 @@ export default class WakaTimePlugin extends siyuan.Plugin {
         this.client = new Client(undefined, "fetch");
 
         this.SETTINGS_DIALOG_ID = `${this.name}-settings-dialog`;
+        this.STATUS_PANEL_DIALOG_ID = `${this.name}-${CONSTANTS.STATUS_PANEL_DIALOG_ID}`;
+
+        statusBarItemProps.ariaLabel = this.i18n.status.noData;
+        statusBarItemProps.onClick = this.openStatusPanel;
     }
 
     public override async onload(): Promise<void> {
@@ -134,6 +142,13 @@ export default class WakaTimePlugin extends siyuan.Plugin {
             callback: this.toggleRecordState,
         });
         this.updateTopBarButtonState();
+
+        /* 添加命令 */
+        this.addCommand({
+            langKey: "wakatime.status",
+            langText: this.i18n.status.command.text,
+            callback: this.openStatusPanel,
+        });
 
         /* 添加状态栏图标 */
         this.statusBarButton = this.addStatusBar({
@@ -294,7 +309,36 @@ export default class WakaTimePlugin extends siyuan.Plugin {
     /* 更新 Wakatime 状态 */
     protected readonly updateWakatimeStatus = (status: Status.IResponse) => {
         // this.logger.debug(`wakatime-status:`, status);
+        this.status = status;
         statusBarItemProps.ariaLabel = status.data.grand_total.text;
+    };
+
+    /* 打开状态面板 */
+    public readonly openStatusPanel = async () => {
+        this.status ??= await this.kernel.rpc.call[CONSTANTS.KERNEL_RPC_METHOD.WAKATIME_STATUS]?.();
+
+        if (this.status == null) {
+            this.siyuan.showMessage(this.i18n.status.noData, undefined, "error");
+            return;
+        }
+
+        const dialog = new siyuan.Dialog({
+            title: `${this.i18n.status.title} <code class="fn__code">${this.name}</code>`,
+            content: `<div id="${this.STATUS_PANEL_DIALOG_ID}" class="fn__flex-column" />`,
+            width: FLAG_MOBILE ? "92vw" : "75vw",
+            height: FLAG_MOBILE ? undefined : "640px",
+        });
+
+        const target = dialog.element.querySelector(`#${this.STATUS_PANEL_DIALOG_ID}`);
+        if (target) {
+            mount(StatusPanel, {
+                target,
+                props: {
+                    status: this.status,
+                    plugin: this,
+                },
+            });
+        }
     };
 
     /* 测试服务状态 */

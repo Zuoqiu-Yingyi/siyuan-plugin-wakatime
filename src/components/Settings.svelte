@@ -39,10 +39,7 @@
         plugin: InstanceType<typeof WakaTimePlugin>; // 插件实例
     }
 
-    const {
-        config,
-        plugin,
-    }: IProps = $props();
+    const { config, plugin }: IProps = $props();
 
     // svelte-ignore state_referenced_locally
     let useragent_placeholder = $state(plugin.wakatimeDefaultUserAgent);
@@ -181,6 +178,20 @@
 >
     <!-- 常规设置面板 -->
     <Panel display={panels[0]?.key === focusPanel}>
+        <!-- 查看今日活动状态 -->
+        <Item
+            text={i18n.settings.generalSettings.status.description}
+            title={i18n.settings.generalSettings.status.title}
+        >
+            <Input
+                slot="input"
+                settingKey="status"
+                settingValue={i18n.settings.generalSettings.status.text}
+                type={ItemType.button}
+                on:clicked={plugin.openStatusPanel}
+            />
+        </Item>
+
         <!-- 清理离线缓存 -->
         <Item
             text={i18n.settings.generalSettings.cleanCache.description}
