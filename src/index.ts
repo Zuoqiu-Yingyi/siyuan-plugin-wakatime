@@ -74,10 +74,11 @@ export default class WakaTimePlugin extends siyuan.Plugin {
     protected readonly STATUS_PANEL_DIALOG_ID: string; // 状态面板对话框 ID
 
     public config: IConfig = DEFAULT_CONFIG;
+    protected status?: Status.IResponse; // WakaTime 状态数据
+
     protected kernelPluginReady = false;
     protected topBarButton?: HTMLElement; // 顶部菜单栏按钮
     protected statusBarButton?: HTMLElement; // 状态栏按钮
-    protected status?: Status.IResponse; // WakaTime 状态数据
 
     constructor(options: any) {
         super(options);
@@ -141,6 +142,13 @@ export default class WakaTimePlugin extends siyuan.Plugin {
             callback: this.toggleRecordState,
         });
         this.updateTopBarButtonState();
+
+        /* 添加命令 */
+        this.addCommand({
+            langKey: "wakatime.status",
+            langText: this.i18n.status.command.text,
+            callback: this.openStatusPanel,
+        });
 
         /* 添加状态栏图标 */
         this.statusBarButton = this.addStatusBar({
@@ -306,7 +314,7 @@ export default class WakaTimePlugin extends siyuan.Plugin {
     };
 
     /* 打开状态面板 */
-    protected readonly openStatusPanel = async () => {
+    public readonly openStatusPanel = async () => {
         this.status ??= await this.kernel.rpc.call[CONSTANTS.KERNEL_RPC_METHOD.WAKATIME_STATUS]?.();
 
         if (this.status == null) {

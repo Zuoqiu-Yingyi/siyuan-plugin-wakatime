@@ -12,6 +12,11 @@
                 "text": "重置",
                 "title": "重置设置选项"
             },
+            "status": {
+                "description": "从 Wakapi/WakaTime 服务查询今日活动状态信息",
+                "text": "查看",
+                "title": "今日活动状态"
+            },
             "title": "常规设置"
         },
         "wakatimeSettings": {
@@ -127,6 +132,9 @@
     },
     "status": {
         "cachedAt": "缓存于",
+        "command": {
+            "text": "查看今日活动状态"
+        },
         "dimension": {
             "categories": "活动类别",
             "dependencies": "依赖",

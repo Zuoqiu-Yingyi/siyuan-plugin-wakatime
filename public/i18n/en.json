@@ -12,6 +12,11 @@
                 "text": "Reset",
                 "title": "Reset settings options"
             },
+            "status": {
+                "description": "Query today's activity status information from the Wakapi/WakaTime service",
+                "text": "View",
+                "title": "Today's Activity Status"
+            },
             "title": "General"
         },
         "wakatimeSettings": {
@@ -127,6 +132,9 @@
     },
     "status": {
         "cachedAt": "Cached at",
+        "command": {
+            "text": "View Today's Activity Status"
+        },
         "dimension": {
             "categories": "Categories",
             "dependencies": "Dependencies",

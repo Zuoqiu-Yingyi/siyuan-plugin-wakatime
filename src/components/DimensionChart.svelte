@@ -104,6 +104,21 @@
         }
     });
 
+    $effect(() => {
+        if (!container) {
+            return;
+        }
+
+        const observer = new ResizeObserver(() => {
+            if (active) {
+                instance?.resize();
+            }
+        });
+        observer.observe(container);
+
+        return () => observer.disconnect();
+    });
+
     // 当 categories 变化且非空时：
     //   1. 用脱离 DOM 的诱饵节点触发 chartRender 加载 echarts 脚本（chartRender 是插件能触达 echarts 的唯一入口，
     //      addScript/Constants.PROTYLE_CDN 属内核内部实现）。诱饵有 data-subtype="echarts" 但无 data-content，
