@@ -1,0 +1,29 @@
+src/components/DimensionChart.svelte
+  s_5ea5ef2bf27b7d::t_ebc0154a76ec87 22
+  s_5ea5ef2bf27b7d::t_3fcd9eb38d08ad 79-80
+  s_5ea5ef2bf27b7d::t_9a1d14b6d4e873 96,98
+  s_5ea5ef2bf27b7d::t_cb7b9b0cef455b 108
+src/components/Status.svelte
+  s_5ea5ef2bf27b7d::t_772d6eddf932b4 110-128,131-149,151-160
+  s_5ea5ef2bf27b7d::t_59efed14258cf2 129
+  s_5ea5ef2bf27b7d::t_24a343a6bc6127 150
+  s_5ea5ef2bf27b7d::t_860c8a8cde2d03 64-79,81
+  s_5ea5ef2bf27b7d::t_94d9b31f5e552e 80
+  s_5ea5ef2bf27b7d::t_3d3f4f0f52c427 94-106
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.39-trip",
+  "base_commit_sha": "1318d41c64fd4fb1162506af247b6f8a6d91665c",
+  "prompts": {},
+  "sessions": {
+    "s_5ea5ef2bf27b7d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1bba0fae-01d0-4e5e-87fc-4b043c3d3abd",
+        "model": "claude-glm-5.2"
+      },
+      "human_author": "Yingyi / 颖逸 <49649786+Zuoqiu-Yingyi@users.noreply.github.com>"
+    }
+  }
+}
