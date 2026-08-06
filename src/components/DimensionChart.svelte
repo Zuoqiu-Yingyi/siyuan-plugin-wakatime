@@ -44,6 +44,7 @@
     }: TProps = $props();
 
     const siyuanGlobal = globalThis as ISiyuanGlobal;
+    // svelte-ignore state_referenced_locally
     const i18n = plugin.i18n;
 
     // chartRender 的目标容器根节点
@@ -98,6 +99,7 @@
     });
 </script>
 
+<h3 class="dimension-chart__title">{title}</h3>
 {#if categories.length === 0}
     <div class="dimension-chart__empty">{i18n.status.noData}</div>
 {:else}
@@ -105,6 +107,12 @@
 {/if}
 
 <style lang="less">
+    .dimension-chart__title {
+        margin: 0 0 0.5em;
+        font-size: 1em;
+        font-weight: 600;
+    }
+
     .dimension-chart__container {
         height: 420px;
         width: 100%;
