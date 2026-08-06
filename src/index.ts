@@ -70,6 +70,7 @@ export default class WakaTimePlugin extends siyuan.Plugin {
     public readonly client: InstanceType<typeof Client>;
 
     protected readonly SETTINGS_DIALOG_ID: string;
+    protected readonly STATUS_PANEL_DIALOG_ID: string; // 状态面板对话框 ID
 
     public config: IConfig = DEFAULT_CONFIG;
     protected kernelPluginReady = false;
@@ -83,6 +84,7 @@ export default class WakaTimePlugin extends siyuan.Plugin {
         this.client = new Client(undefined, "fetch");
 
         this.SETTINGS_DIALOG_ID = `${this.name}-settings-dialog`;
+        this.STATUS_PANEL_DIALOG_ID = `${this.name}-${CONSTANTS.STATUS_PANEL_DIALOG_ID}`;
     }
 
     public override async onload(): Promise<void> {
