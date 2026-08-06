@@ -152,11 +152,6 @@
         height: 100%;
     }
 
-    /* chartRender 注入的 protyle-icons (刷新/编辑/更多) 在对话框中无对应处理器，隐藏 */
-    :global(.b3-dialog__content) .status-panel .protyle-icons {
-        display: none;
-    }
-
     .status-overview {
         padding: 1em;
         display: flex;
