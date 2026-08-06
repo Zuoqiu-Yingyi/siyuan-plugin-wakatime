@@ -1,0 +1,26 @@
+src/components/DimensionChart.svelte
+  s_fa2c4144aa3ab7::t_48d1b59fa4108d 129
+  s_fa2c4144aa3ab7::t_f44cceab135521 25
+  s_fa2c4144aa3ab7::t_f8e156be1bba92 45-46
+  s_fa2c4144aa3ab7::t_327ea87ff5b270 24
+  s_fa2c4144aa3ab7::t_49cf1a2ad2afdd 142
+  s_fa2c4144aa3ab7::t_272ca78226585b 112
+  s_fa2c4144aa3ab7::t_220e9bc051f592 128
+  s_fa2c4144aa3ab7::t_e6155579fc0148 84
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.39-trip",
+  "base_commit_sha": "b07a09acd0acc57ea059a2977fced187e3e6d225",
+  "prompts": {},
+  "sessions": {
+    "s_fa2c4144aa3ab7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2b5230b6-d128-410f-8240-610acb90462a",
+        "model": "claude-glm-5.2"
+      },
+      "human_author": "Yingyi / 颖逸 <49649786+Zuoqiu-Yingyi@users.noreply.github.com>"
+    }
+  }
+}
