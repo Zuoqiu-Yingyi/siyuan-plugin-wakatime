@@ -1,0 +1,13 @@
+src/index.ts
+  ai_agent 36,80,304,310,312,320,328-331
+src/components/DimensionChart.svelte
+  ai_agent 30,43-46,55-57,65,68-77,80-83,88-89,101-105,122,127,149-156,163,181,188
+src/components/Status.svelte
+  ai_agent 51-52,104-113,115-116,120,128,132-136,182-184
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.39-trip",
+  "base_commit_sha": "e417996f1047ad2a6296f2a29dea867b8c6d8c0a",
+  "prompts": {}
+}
