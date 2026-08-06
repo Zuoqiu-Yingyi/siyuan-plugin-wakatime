@@ -131,7 +131,7 @@
         }
     },
     "status": {
-        "cachedAt": "缓存于",
+        "cachedAt": "状态更新时间",
         "command": {
             "text": "查看今日活动状态"
         },
@@ -140,15 +140,18 @@
             "dependencies": "依赖",
             "editors": "编辑器",
             "languages": "编程语言",
-            "machines": "机器",
+            "machines": "设备",
             "operating_systems": "操作系统",
             "projects": "项目"
         },
-        "noData": "暂无数据。请在设置中检查 API KEY 与连接。",
+        "grandTotal": "今日活动时间",
+        "noData": "暂无数据",
         "panel": {
             "breakdown": "细分",
             "overview": "概览"
         },
+        "rangeEnd": "活动结束时间",
+        "rangeStart": "活动开始时间",
         "title": "WakaTime 状态"
     },
     "topBar": {

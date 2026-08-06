@@ -131,7 +131,7 @@
         }
     },
     "status": {
-        "cachedAt": "Cached at",
+        "cachedAt": "Status update time",
         "command": {
             "text": "View Today's Activity Status"
         },
@@ -144,11 +144,14 @@
             "operating_systems": "Operating Systems",
             "projects": "Projects"
         },
-        "noData": "No data available. Check your API KEY and connection in settings.",
+        "grandTotal": "Today's activity time",
+        "noData": "No data available",
         "panel": {
             "breakdown": "Breakdown",
             "overview": "Overview"
         },
+        "rangeEnd": "Activity end time",
+        "rangeStart": "Activity start time",
         "title": "WakaTime Status"
     },
     "topBar": {

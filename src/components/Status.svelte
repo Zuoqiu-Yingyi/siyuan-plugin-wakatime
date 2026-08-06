@@ -92,6 +92,11 @@
         { key: DimensionKey.categories, text: i18n.status.dimension.categories, name: i18n.status.dimension.categories, icon: "🏷️" },
         { key: DimensionKey.dependencies, text: i18n.status.dimension.dependencies, name: i18n.status.dimension.dependencies, icon: "📦" },
     ];
+
+    function dateFormat(date: string): string {
+        const d = new Date(date);
+        return d.toLocaleString();
+    }
 </script>
 
 <div class="status-panel fn__flex-column">
@@ -103,16 +108,23 @@
         <!-- 概览面板 -->
         <Panel display={panels[0]!.key === focusPanel}>
             <div class="status-overview">
-                <div class="status-overview__total">
-                    <span class="status-overview__digital">{data.grand_total.digital}</span>
-                    <span class="status-overview__text">{data.grand_total.text}</span>
+                <div class="status-overview__grid status-overview__total">
+                    <span>{i18n.status.grandTotal}</span>
+                    <span class="status-overview__value">
+                        <span class="status-overview__digital">{`${data.grand_total.hours.toString().padStart(2, "0")}:${data.grand_total.minutes.toString().padStart(2, "0")}`}</span>
+                        <span class="status-overview__text">{data.grand_total.text}</span>
+                    </span>
                 </div>
-                <div class="status-overview__range">
-                    <span>{data.range.text}</span>
-                    <span class="status-overview__date">{data.range.date}</span>
-                    <span class="status-overview__tz">{data.range.timezone}</span>
+                <div class="status-overview__grid status-overview__range">
+                    <span>{i18n.status.rangeStart}</span>
+                    <time datetime={data.range.start}>{dateFormat(data.range.start)}</time>
+
+                    <span>{i18n.status.rangeEnd}</span>
+                    <time datetime={data.range.end}>{dateFormat(data.range.end)}</time>
+
+                    <span>{i18n.status.cachedAt}</span>
+                    <time datetime={status.cached_at}>{dateFormat(status.cached_at)}</time>
                 </div>
-                <div class="status-overview__cached">{i18n.status.cachedAt}: {status.cached_at}</div>
             </div>
         </Panel>
 
@@ -153,30 +165,31 @@
         gap: 0.75em;
     }
 
-    .status-overview__total {
-        display: flex;
+    .status-overview__grid {
+        display: grid;
+        grid-template-columns: max-content minmax(0, 1fr);
+        column-gap: 1em;
+        row-gap: 0.5em;
+        align-items: baseline;
+    }
+
+    .status-overview__value {
         align-items: baseline;
         gap: 0.5em;
     }
 
     .status-overview__digital {
         font-size: 2em;
-        font-weight: 600;
+        font-weight: bold;
     }
 
     .status-overview__text {
         color: var(--b3-theme-on-surface);
     }
 
-    .status-overview__range {
-        display: flex;
-        gap: 1em;
+    .status-overview__range time {
         color: var(--b3-theme-on-surface);
-    }
-
-    .status-overview__cached {
-        color: var(--b3-theme-on-surface-light);
-        font-size: 0.875em;
+        text-align: left;
     }
 
     .tab__content {
