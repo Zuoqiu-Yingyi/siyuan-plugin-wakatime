@@ -21,6 +21,8 @@
     lang="ts"
     module
 >
+    import type { ISiyuanGlobal } from "@workspace/types/siyuan";
+
     import type WakaTimePlugin from "@/index";
     import type { Status } from "@/types/wakatime";
 
@@ -39,6 +41,8 @@
 
 <script lang="ts">
     const { categories, title, plugin }: TProps = $props();
+
+    const siyuanGlobal = globalThis as ISiyuanGlobal;
 
     // svelte-ignore state_referenced_locally
     const i18n = plugin.i18n;
@@ -77,7 +81,7 @@
         };
     }
 
-    let instance: any;
+    let instance: ReturnType<typeof siyuanGlobal.echarts.init> | undefined;
     let disposed = false;
 
     // 当 categories 变化且非空时：
@@ -105,7 +109,7 @@
                 clearInterval(poll);
                 return;
             }
-            if (!(globalThis as any).echarts) {
+            if (!siyuanGlobal.echarts) {
                 if (++tries >= MAX_TRIES) {
                     clearInterval(poll);
                     if (container) {
@@ -121,13 +125,11 @@
             }
             try {
                 // 3. 手动 init 真实容器（暗色主题判定与内核 chartRender 同源）
-                const dark = (globalThis as any).siyuan.config.appearance.mode === 1;
-                instance = (globalThis as any).echarts.init(container, dark ? "dark" : undefined);
+                const dark = siyuanGlobal.siyuan?.config?.appearance.mode === 1;
+                instance = siyuanGlobal.echarts.init(container, dark ? "dark" : undefined);
                 instance.setOption(option);
             }
             catch (error) {
-                (globalThis as any).echarts?.dispose(instance);
-                instance = undefined;
                 // eslint-disable-next-line svelte/no-dom-manipulating
                 container.innerHTML = `<div class="ft__error" style="height:420px;display:flex;align-items:center;justify-content:center;">echarts render error: ${String(error)}</div>`;
             }
@@ -137,7 +139,7 @@
             disposed = true;
             clearInterval(poll);
             if (instance) {
-                (globalThis as any).echarts?.dispose(instance);
+                siyuanGlobal.echarts?.dispose(instance);
                 instance = undefined;
             }
         };
