@@ -1,0 +1,26 @@
+src/components/Status.svelte
+  s_5ea5ef2bf27b7d::t_9adc051e659823 142
+  s_5ea5ef2bf27b7d::t_43b15d1966d464 53
+  s_5ea5ef2bf27b7d::t_ceb7a7fead6e47 54-55
+  s_5ea5ef2bf27b7d::t_c024951daf779e 143
+  s_5ea5ef2bf27b7d::t_624a87c0548c43 27-40,42-52,56-108,110-138,146-200
+  s_5ea5ef2bf27b7d::t_5b9662177e6b68 109
+  s_5ea5ef2bf27b7d::t_00b48ce312aeb7 139-141,144-145
+  s_5ea5ef2bf27b7d::t_12782d7d3b5e11 41
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.39-trip",
+  "base_commit_sha": "bb966638e05480797a3d762fce1a18bc5071f8cb",
+  "prompts": {},
+  "sessions": {
+    "s_5ea5ef2bf27b7d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1bba0fae-01d0-4e5e-87fc-4b043c3d3abd",
+        "model": "claude-glm-5.2"
+      },
+      "human_author": "Yingyi / 颖逸 <49649786+Zuoqiu-Yingyi@users.noreply.github.com>"
+    }
+  }
+}
