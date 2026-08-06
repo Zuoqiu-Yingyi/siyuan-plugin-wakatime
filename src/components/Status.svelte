@@ -48,9 +48,8 @@
     const { status, plugin }: TProps = $props();
 
     // svelte-ignore state_referenced_locally
-    const i18n = plugin?.i18n;
-
-    const data = $derived(status?.data);
+    const i18n = plugin.i18n;
+    const data = $derived(status.data);
 
     const PanelKey = {
         overview: "overview",
@@ -102,27 +101,23 @@
         let:focus={focusPanel}
     >
         <!-- 概览面板 -->
-        <Panel display={panels[0]?.key === focusPanel}>
-            {#if data}
-                <div class="status-overview">
-                    <div class="status-overview__total">
-                        <span class="status-overview__digital">{data.grand_total.digital}</span>
-                        <span class="status-overview__text">{data.grand_total.text}</span>
-                    </div>
-                    <div class="status-overview__range">
-                        <span>{data.range.text}</span>
-                        <span class="status-overview__date">{data.range.date}</span>
-                        <span class="status-overview__tz">{data.range.timezone}</span>
-                    </div>
-                    <div class="status-overview__cached">{i18n.status.cachedAt}: {status?.cached_at}</div>
+        <Panel display={panels[0]!.key === focusPanel}>
+            <div class="status-overview">
+                <div class="status-overview__total">
+                    <span class="status-overview__digital">{data.grand_total.digital}</span>
+                    <span class="status-overview__text">{data.grand_total.text}</span>
                 </div>
-            {:else}
-                <div class="status-overview__empty">{i18n.status.noData}</div>
-            {/if}
+                <div class="status-overview__range">
+                    <span>{data.range.text}</span>
+                    <span class="status-overview__date">{data.range.date}</span>
+                    <span class="status-overview__tz">{data.range.timezone}</span>
+                </div>
+                <div class="status-overview__cached">{i18n.status.cachedAt}: {status.cached_at}</div>
+            </div>
         </Panel>
 
         <!-- 细分面板 -->
-        <Panel display={panels[1]?.key === focusPanel}>
+        <Panel display={panels[1]!.key === focusPanel}>
             <Tabs
                 focus={breakdown_focus_key}
                 tabs={breakdown_tabs}
@@ -130,16 +125,15 @@
             >
                 {#each breakdown_tabs as tab (tab.key)}
                     <div
+                        class="tab__content"
                         class:fn__none={tab.key !== focusTab}
                         data-type={tab.name}
                     >
-                        {#if plugin && data}
-                            <DimensionChart
-                                categories={(data?.[tab.key as keyof typeof data] as Status.Category[] | undefined) ?? []}
-                                {plugin}
-                                title={tab.text}
-                            />
-                        {/if}
+                        <DimensionChart
+                            active={panels[1]!.key === focusPanel && tab.key === focusTab}
+                            categories={(data[tab.key as keyof typeof data] as Status.Category[] | undefined) ?? []}
+                            {plugin}
+                        />
                     </div>
                 {/each}
             </Tabs>
@@ -185,9 +179,8 @@
         font-size: 0.875em;
     }
 
-    .status-overview__empty {
-        padding: 1em;
-        text-align: center;
-        color: var(--b3-theme-on-surface);
+    .tab__content {
+        width: 100%;
+        height: 100%;
     }
 </style>

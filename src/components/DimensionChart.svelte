@@ -27,8 +27,8 @@
     import type { Status } from "@/types/wakatime";
 
     export interface IProps {
+        active: boolean; // 是否激活
         categories: Status.Category[]; // 一个维度的分项数据
-        title: string; // 维度标题 (i18n)
         plugin: InstanceType<typeof WakaTimePlugin>; // 插件实例
     }
 
@@ -40,7 +40,10 @@
 </script>
 
 <script lang="ts">
-    const { categories, title, plugin }: TProps = $props();
+    import { isZhLang } from "@workspace/utils/siyuan/locale";
+    import { isDarkTheme } from "@workspace/utils/siyuan/theme";
+
+    const { active, categories, plugin }: TProps = $props();
 
     const siyuanGlobal = globalThis as ISiyuanGlobal;
 
@@ -49,6 +52,9 @@
 
     // chartRender 的目标容器根节点
     let container = $state<HTMLDivElement>();
+    // @ts-expect-error
+    let instance: ReturnType<typeof siyuanGlobal.echarts.init> | undefined;
+    let disposed = false;
 
     /**
      * 由 Category[] 构建 echarts 环形图配置
@@ -56,20 +62,31 @@
      */
     function buildOption(cats: Status.Category[]): Record<string, unknown> {
         return {
+            backgroundColor: "transparent",
             tooltip: {
                 trigger: "item",
-                formatter: "{b}: {c}s ({d}%)",
+                // formatter: "{b}: {c}s ({d}%)",
+                formatter: (params: Record<string, unknown>) => {
+                    const category = cats.find((c) => c.name === params.name);
+                    if (category) {
+                        return `${params.name}: ${category.text} (${params.percent}%)`;
+                    }
+                    else {
+                        return `${params.name}: ${params.value}s (${params.percent}%)`;
+                    }
+                },
             },
             legend: {
-                type: "scroll",
-                orient: "vertical",
-                right: 0,
-                top: "middle",
+                // type: "scroll",
+                // orient: "vertical",
+                // left: 0,
+                bottom: 0,
             },
             series: [
                 {
                     type: "pie",
-                    radius: ["40%", "70%"],
+                    roseType: "radius",
+                    radius: ["50%", "75%"],
                     avoidLabelOverlap: true,
                     label: {
                         show: true,
@@ -81,8 +98,11 @@
         };
     }
 
-    let instance: ReturnType<typeof siyuanGlobal.echarts.init> | undefined;
-    let disposed = false;
+    $effect(() => {
+        if (active) {
+            instance?.resize();
+        }
+    });
 
     // 当 categories 变化且非空时：
     //   1. 用脱离 DOM 的诱饵节点触发 chartRender 加载 echarts 脚本（chartRender 是插件能触达 echarts 的唯一入口，
@@ -99,11 +119,12 @@
         // 1. 诱饵加载 echarts 脚本（脱离 DOM，不 appendChild）
         const decoy = document.createElement("div");
         decoy.setAttribute("data-subtype", "echarts");
+        decoy.appendChild(document.createElement("div"));
         plugin.siyuan.ProtyleMethod.chartRender(decoy);
 
         // 2. 轮询就绪
         let tries = 0;
-        const MAX_TRIES = 600; // 16ms * 600 ≈ 9.6s，覆盖首次 CDN 加载
+        const MAX_TRIES = 300; // 100ms * 300 ≈ 30s，覆盖首次 CDN 加载
         const poll = setInterval(() => {
             if (disposed) {
                 clearInterval(poll);
@@ -125,15 +146,21 @@
             }
             try {
                 // 3. 手动 init 真实容器（暗色主题判定与内核 chartRender 同源）
-                const dark = siyuanGlobal.siyuan?.config?.appearance.mode === 1;
-                instance = siyuanGlobal.echarts.init(container, dark ? "dark" : undefined);
+                instance = siyuanGlobal.echarts.init(container, isDarkTheme() ? "dark" : undefined, {
+                    // width: "auto",
+                    // height: "auto",
+                    // renderer: "canvas",
+                    renderer: "svg",
+                    locale: isZhLang() ? "ZH" : "EN",
+                });
+                instance.resize();
                 instance.setOption(option);
             }
             catch (error) {
                 // eslint-disable-next-line svelte/no-dom-manipulating
                 container.innerHTML = `<div class="ft__error" style="height:420px;display:flex;align-items:center;justify-content:center;">echarts render error: ${String(error)}</div>`;
             }
-        }, 16);
+        }, 100);
 
         return () => {
             disposed = true;
@@ -146,26 +173,19 @@
     });
 </script>
 
-<h3 class="dimension-chart__title">{title}</h3>
 {#if categories.length === 0}
     <div class="dimension-chart__empty">{i18n.status.noData}</div>
 {:else}
     <div
         bind:this={container}
-        class="dimension-chart__container protyle-wysiwyg"
+        class="dimension-chart__container"
     ></div>
 {/if}
 
 <style lang="less">
-    .dimension-chart__title {
-        margin: 0 0 0.5em;
-        font-size: 1em;
-        font-weight: 600;
-    }
-
     .dimension-chart__container {
-        height: 420px;
         width: 100%;
+        height: 100%;
     }
 
     .dimension-chart__empty {

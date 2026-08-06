@@ -33,7 +33,7 @@ import icon_wakatime from "./assets/symbols/icon-wakatime.symbol?raw";
 import { DEFAULT_CONFIG } from "./configs/default";
 import CONSTANTS from "./constants";
 
-import { statusBarItemProps, statusProps } from "./components/props.svelte";
+import { statusBarItemProps } from "./components/props.svelte";
 import Settings from "./components/Settings.svelte";
 import StatusPanel from "./components/Status.svelte";
 
@@ -77,6 +77,7 @@ export default class WakaTimePlugin extends siyuan.Plugin {
     protected kernelPluginReady = false;
     protected topBarButton?: HTMLElement; // 顶部菜单栏按钮
     protected statusBarButton?: HTMLElement; // 状态栏按钮
+    protected status?: Status.IResponse; // WakaTime 状态数据
 
     constructor(options: any) {
         super(options);
@@ -86,8 +87,6 @@ export default class WakaTimePlugin extends siyuan.Plugin {
 
         this.SETTINGS_DIALOG_ID = `${this.name}-settings-dialog`;
         this.STATUS_PANEL_DIALOG_ID = `${this.name}-${CONSTANTS.STATUS_PANEL_DIALOG_ID}`;
-
-        statusProps.plugin = this;
 
         statusBarItemProps.ariaLabel = this.i18n.status.noData;
         statusBarItemProps.onClick = this.openStatusPanel;
@@ -302,14 +301,15 @@ export default class WakaTimePlugin extends siyuan.Plugin {
     /* 更新 Wakatime 状态 */
     protected readonly updateWakatimeStatus = (status: Status.IResponse) => {
         // this.logger.debug(`wakatime-status:`, status);
+        this.status = status;
         statusBarItemProps.ariaLabel = status.data.grand_total.text;
     };
 
     /* 打开状态面板 */
     protected readonly openStatusPanel = async () => {
-        const status = await this.kernel.rpc.call[CONSTANTS.KERNEL_RPC_METHOD.WAKATIME_STATUS]?.();
+        this.status ??= await this.kernel.rpc.call[CONSTANTS.KERNEL_RPC_METHOD.WAKATIME_STATUS]?.();
 
-        if (status == null) {
+        if (this.status == null) {
             this.siyuan.showMessage(this.i18n.status.noData, undefined, "error");
             return;
         }
@@ -317,16 +317,18 @@ export default class WakaTimePlugin extends siyuan.Plugin {
         const dialog = new siyuan.Dialog({
             title: `${this.i18n.status.title} <code class="fn__code">${this.name}</code>`,
             content: `<div id="${this.STATUS_PANEL_DIALOG_ID}" class="fn__flex-column" />`,
-            width: FLAG_MOBILE ? "92vw" : "720px",
+            width: FLAG_MOBILE ? "92vw" : "75vw",
             height: FLAG_MOBILE ? undefined : "640px",
         });
 
         const target = dialog.element.querySelector(`#${this.STATUS_PANEL_DIALOG_ID}`);
         if (target) {
-            statusProps.status = status;
             mount(StatusPanel, {
                 target,
-                props: statusProps,
+                props: {
+                    status: this.status,
+                    plugin: this,
+                },
             });
         }
     };
