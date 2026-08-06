@@ -38,11 +38,8 @@
 </script>
 
 <script lang="ts">
-    import type { ISiyuanGlobal } from "@workspace/types/siyuan";
-
     const { categories, title, plugin }: TProps = $props();
 
-    const siyuanGlobal = globalThis as ISiyuanGlobal;
     // svelte-ignore state_referenced_locally
     const i18n = plugin.i18n;
 
@@ -80,21 +77,70 @@
         };
     }
 
-    // 当 categories 变化且非空时，构建 [data-subtype="echarts"] DOM 并调用 chartRender
+    let instance: any;
+    let disposed = false;
+
+    // 当 categories 变化且非空时：
+    //   1. 用脱离 DOM 的诱饵节点触发 chartRender 加载 echarts 脚本（chartRender 是插件能触达 echarts 的唯一入口，
+    //      addScript/Constants.PROTYLE_CDN 属内核内部实现）。诱饵有 data-subtype="echarts" 但无 data-content，
+    //      故 chartRender 走完 addScript 链后于 `无 data-content` 分支提前 return，不触碰真实容器、不调用 echarts.init。
+    //   2. 轮询 globalThis.echarts 就绪（addScript 按 id 去重，首次后常驻），到顶则显示错误态。
+    //   3. 就绪后在真实 container 上手动 echarts.init(...).setOption(option)，teardown 释放实例。
     $effect(() => {
         if (!container || categories.length === 0) {
             return;
         }
         const option = buildOption(categories);
-        const node = document.createElement("div");
-        node.setAttribute("data-subtype", "echarts");
-        node.setAttribute("data-content", siyuanGlobal.Lute.EscapeHTMLStr(JSON.stringify(option)));
-        node.innerHTML = "<div></div>";
-        // eslint-disable-next-line svelte/no-dom-manipulating
-        container.innerHTML = "";
-        // eslint-disable-next-line svelte/no-dom-manipulating
-        container.appendChild(node);
-        plugin.siyuan.ProtyleMethod.chartRender(node);
+
+        // 1. 诱饵加载 echarts 脚本（脱离 DOM，不 appendChild）
+        const decoy = document.createElement("div");
+        decoy.setAttribute("data-subtype", "echarts");
+        plugin.siyuan.ProtyleMethod.chartRender(decoy);
+
+        // 2. 轮询就绪
+        let tries = 0;
+        const MAX_TRIES = 600; // 16ms * 600 ≈ 9.6s，覆盖首次 CDN 加载
+        const poll = setInterval(() => {
+            if (disposed) {
+                clearInterval(poll);
+                return;
+            }
+            if (!(globalThis as any).echarts) {
+                if (++tries >= MAX_TRIES) {
+                    clearInterval(poll);
+                    if (container) {
+                        // eslint-disable-next-line svelte/no-dom-manipulating
+                        container.innerHTML = `<div class="ft__error" style="height:420px;display:flex;align-items:center;justify-content:center;">${i18n.status.noData}</div>`;
+                    }
+                }
+                return;
+            }
+            clearInterval(poll);
+            if (disposed || !container) {
+                return;
+            }
+            try {
+                // 3. 手动 init 真实容器（暗色主题判定与内核 chartRender 同源）
+                const dark = (globalThis as any).siyuan.config.appearance.mode === 1;
+                instance = (globalThis as any).echarts.init(container, dark ? "dark" : undefined);
+                instance.setOption(option);
+            }
+            catch (error) {
+                (globalThis as any).echarts?.dispose(instance);
+                instance = undefined;
+                // eslint-disable-next-line svelte/no-dom-manipulating
+                container.innerHTML = `<div class="ft__error" style="height:420px;display:flex;align-items:center;justify-content:center;">echarts render error: ${String(error)}</div>`;
+            }
+        }, 16);
+
+        return () => {
+            disposed = true;
+            clearInterval(poll);
+            if (instance) {
+                (globalThis as any).echarts?.dispose(instance);
+                instance = undefined;
+            }
+        };
     });
 </script>
 
