@@ -13,7 +13,42 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-export const statusBarItemProps = $state({
+import type { TProps as TToolbarItemProps } from "@workspace/components/siyuan/misc/ToolbarItem.svelte";
+
+import type { TProps as TStatusProps } from "./Status.svelte";
+
+export const statusBarItemProps = $state<TToolbarItemProps>({
     icon: "#icon-wakatime",
     ariaLabel: "",
+    onClick: () => { },
+});
+
+export const statusProps = $state<TStatusProps>({
+    status: {
+        cached_at: "",
+        data: {
+            categories: [],
+            dependencies: [],
+            editors: [],
+            grand_total: {
+                digital: "",
+                hours: 0,
+                minutes: 0,
+                text: "",
+                total_seconds: 0,
+            },
+            languages: [],
+            machines: [],
+            operating_systems: [],
+            projects: [],
+            range: {
+                date: "",
+                end: "",
+                start: "",
+                text: "",
+                timezone: "",
+            },
+        },
+    },
+    plugin: undefined!,
 });

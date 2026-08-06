@@ -17,7 +17,10 @@
 
 <!-- 维度图表 -->
 
-<script lang="ts" module>
+<script
+    lang="ts"
+    module
+>
     import type WakaTimePlugin from "@/index";
     import type { Status } from "@/types/wakatime";
 
@@ -37,11 +40,7 @@
 <script lang="ts">
     import type { ISiyuanGlobal } from "@workspace/types/siyuan";
 
-    const {
-        categories,
-        title,
-        plugin,
-    }: TProps = $props();
+    const { categories, title, plugin }: TProps = $props();
 
     const siyuanGlobal = globalThis as ISiyuanGlobal;
     // svelte-ignore state_referenced_locally
@@ -75,9 +74,7 @@
                         show: true,
                         formatter: "{b} {d}%",
                     },
-                    data: cats
-                        .filter((c) => c.total_seconds > 0)
-                        .map((c) => ({ name: c.name, value: c.total_seconds })),
+                    data: cats.filter((c) => c.total_seconds > 0).map((c) => ({ name: c.name, value: c.total_seconds })),
                 },
             ],
         };
@@ -105,7 +102,10 @@
 {#if categories.length === 0}
     <div class="dimension-chart__empty">{i18n.status.noData}</div>
 {:else}
-    <div bind:this={container} class="dimension-chart__container"></div>
+    <div
+        bind:this={container}
+        class="dimension-chart__container protyle-wysiwyg"
+    ></div>
 {/if}
 
 <style lang="less">

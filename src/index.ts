@@ -33,7 +33,7 @@ import icon_wakatime from "./assets/symbols/icon-wakatime.symbol?raw";
 import { DEFAULT_CONFIG } from "./configs/default";
 import CONSTANTS from "./constants";
 
-import { statusBarItemProps } from "./components/props.svelte";
+import { statusBarItemProps, statusProps } from "./components/props.svelte";
 import Settings from "./components/Settings.svelte";
 import StatusPanel from "./components/Status.svelte";
 
@@ -86,6 +86,11 @@ export default class WakaTimePlugin extends siyuan.Plugin {
 
         this.SETTINGS_DIALOG_ID = `${this.name}-settings-dialog`;
         this.STATUS_PANEL_DIALOG_ID = `${this.name}-${CONSTANTS.STATUS_PANEL_DIALOG_ID}`;
+
+        statusProps.plugin = this;
+
+        statusBarItemProps.ariaLabel = this.i18n.status.noData;
+        statusBarItemProps.onClick = this.openStatusPanel;
     }
 
     public override async onload(): Promise<void> {
@@ -301,15 +306,24 @@ export default class WakaTimePlugin extends siyuan.Plugin {
     };
 
     /* 打开状态面板 */
-    protected readonly openStatusPanel = () => {
+    protected readonly openStatusPanel = async () => {
+        const status = await this.kernel.rpc.call[CONSTANTS.KERNEL_RPC_METHOD.WAKATIME_STATUS]?.();
+
+        if (status == null) {
+            this.siyuan.showMessage(this.i18n.status.noData, undefined, "error");
+            return;
+        }
+
         const dialog = new siyuan.Dialog({
             title: `${this.i18n.status.title} <code class="fn__code">${this.name}</code>`,
             content: `<div id="${this.STATUS_PANEL_DIALOG_ID}" class="fn__flex-column" />`,
             width: FLAG_MOBILE ? "92vw" : "720px",
             height: FLAG_MOBILE ? undefined : "640px",
         });
+
         const target = dialog.element.querySelector(`#${this.STATUS_PANEL_DIALOG_ID}`);
         if (target) {
+            statusProps.status = status;
             mount(StatusPanel, {
                 target,
                 props: statusProps,

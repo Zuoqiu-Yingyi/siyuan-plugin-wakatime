@@ -125,29 +125,29 @@
             "title": "Wakapi/WakaTime"
         }
     },
+    "status": {
+        "cachedAt": "Cached at",
+        "dimension": {
+            "categories": "Categories",
+            "dependencies": "Dependencies",
+            "editors": "Editors",
+            "languages": "Languages",
+            "machines": "Machines",
+            "operating_systems": "Operating Systems",
+            "projects": "Projects"
+        },
+        "noData": "No data available. Check your API KEY and connection in settings.",
+        "panel": {
+            "breakdown": "Breakdown",
+            "overview": "Overview"
+        },
+        "title": "WakaTime Status"
+    },
     "topBar": {
         "record": {
             "disabled": "WakaTime record 🔴",
             "enabled": "WakaTime record 🟢",
             "title": "WakaTime record"
-        }
-    },
-    "status": {
-        "title": "WakaTime Status",
-        "panel": {
-            "overview": "Overview",
-            "breakdown": "Breakdown"
-        },
-        "cachedAt": "Cached at",
-        "noData": "No data available. Check your API KEY and connection in settings.",
-        "dimension": {
-            "languages": "Languages",
-            "editors": "Editors",
-            "projects": "Projects",
-            "operating_systems": "Operating Systems",
-            "machines": "Machines",
-            "categories": "Categories",
-            "dependencies": "Dependencies"
         }
     }
 }

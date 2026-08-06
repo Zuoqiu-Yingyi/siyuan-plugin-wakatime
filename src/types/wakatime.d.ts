@@ -152,53 +152,196 @@ export namespace Status {
         timeout: number;
     }
     export interface IResponse {
+        /**
+         * ISO 8601 UTC datetime when this response was calculated and cached
+         */
         cached_at: string;
+
+        /**
+         * summary of coding activity for the requested time range
+         */
         data: Summary;
     }
 
+    /**
+     * response of the summaries endpoint covering a date range
+     */
     export interface Summaries {
+        /**
+         * summaries for each day in the requested range
+         */
         data: Summary[];
+
+        /**
+         * ISO 8601 UTC datetime marking the end of the range
+         */
         end: string;
+
+        /**
+         * ISO 8601 UTC datetime marking the start of the range
+         */
         start: string;
     }
 
+    /**
+     * aggregated coding activity for a single day
+     */
     export interface Summary {
+        /**
+         * coding activity grouped by category (e.g. coding, debugging, building)
+         */
         categories: Category[];
+
+        /**
+         * coding activity grouped by file dependency
+         */
         dependencies: Category[];
+
+        /**
+         * coding activity grouped by editor
+         */
         editors: Category[];
+
+        /**
+         * total coding activity aggregated across all dimensions
+         */
         grand_total: GrandTotal;
+
+        /**
+         * coding activity grouped by programming language
+         */
         languages: Category[];
+
+        /**
+         * coding activity grouped by machine
+         */
         machines: Category[];
+
+        /**
+         * coding activity grouped by operating system
+         */
         operating_systems: Category[];
+
+        /**
+         * coding activity grouped by project
+         */
         projects: Category[];
+
+        /**
+         * metadata of the day this summary covers
+         */
         range: Range;
     }
 
+    /**
+     * coding activity broken down by a single dimension
+     * (e.g. one language, editor, machine, project, or category)
+     */
     export interface Category {
+        /**
+         * duration in digital clock format (e.g. "10:30")
+         */
         digital: string;
+
+        /**
+         * whole hours of activity
+         */
         hours: number;
+
+        /**
+         * identifier of the machine this entry belongs to;
+         * only present in the machines breakdown
+         */
         machine_name_id?: string;
+
+        /**
+         * whole minutes of activity (the remainder after hours)
+         */
         minutes: number;
+
+        /**
+         * name of this entry (e.g. language, editor, or project name)
+         */
         name: string;
+
+        /**
+         * percentage of the grand total, between 0 and 100
+         */
         percent: number;
+
+        /**
+         * whole seconds of activity (the remainder after minutes)
+         */
         seconds: number;
+
+        /**
+         * duration in human-readable format (e.g. "10 hrs 30 mins")
+         */
         text: string;
+
+        /**
+         * total activity duration in seconds
+         */
         total_seconds: number;
     }
 
+    /**
+     * total coding activity aggregated across all dimensions
+     */
     export interface GrandTotal {
+        /**
+         * duration in digital clock format (e.g. "10:30")
+         */
         digital: string;
+
+        /**
+         * whole hours of activity
+         */
         hours: number;
+
+        /**
+         * whole minutes of activity (the remainder after hours)
+         */
         minutes: number;
+
+        /**
+         * duration in human-readable format (e.g. "10 hrs 30 mins")
+         */
         text: string;
+
+        /**
+         * total activity duration in seconds
+         */
         total_seconds: number;
     }
 
-    interface Range {
+    /**
+     * metadata of the time range a summary covers
+     */
+    export interface Range {
+        /**
+         * date of this summary in YEAR-MONTH-DAY format
+         */
         date: string;
+
+        /**
+         * ISO 8601 UTC datetime marking the end of the range
+         */
         end: string;
+
+        /**
+         * ISO 8601 UTC datetime marking the start of the range
+         */
         start: string;
+
+        /**
+         * human-readable description of the range (e.g. "Today")
+         */
         text: string;
+
+        /**
+         * timezone in Olson Country/Region format (e.g. "Asia/Shanghai")
+         */
         timezone: string;
     }
 }

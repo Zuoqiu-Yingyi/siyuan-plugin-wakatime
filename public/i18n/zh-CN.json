@@ -125,29 +125,29 @@
             "title": "Wakapi/WakaTime"
         }
     },
+    "status": {
+        "cachedAt": "缓存于",
+        "dimension": {
+            "categories": "活动类别",
+            "dependencies": "依赖",
+            "editors": "编辑器",
+            "languages": "编程语言",
+            "machines": "机器",
+            "operating_systems": "操作系统",
+            "projects": "项目"
+        },
+        "noData": "暂无数据。请在设置中检查 API KEY 与连接。",
+        "panel": {
+            "breakdown": "细分",
+            "overview": "概览"
+        },
+        "title": "WakaTime 状态"
+    },
     "topBar": {
         "record": {
             "disabled": "WakaTime 记录 🔴",
             "enabled": "WakaTime 记录 🟢",
             "title": "WakaTime 记录"
-        }
-    },
-    "status": {
-        "title": "WakaTime 状态",
-        "panel": {
-            "overview": "概览",
-            "breakdown": "细分"
-        },
-        "cachedAt": "缓存于",
-        "noData": "暂无数据。请在设置中检查 API KEY 与连接。",
-        "dimension": {
-            "languages": "编程语言",
-            "editors": "编辑器",
-            "projects": "项目",
-            "operating_systems": "操作系统",
-            "machines": "机器",
-            "categories": "活动类别",
-            "dependencies": "依赖"
         }
     }
 }

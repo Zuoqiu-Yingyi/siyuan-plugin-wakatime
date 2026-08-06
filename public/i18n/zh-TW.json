@@ -125,29 +125,29 @@
             "title": "Wakapi/WakaTime"
         }
     },
+    "status": {
+        "cachedAt": "快取於",
+        "dimension": {
+            "categories": "活動類別",
+            "dependencies": "依賴",
+            "editors": "編輯器",
+            "languages": "程式語言",
+            "machines": "機器",
+            "operating_systems": "作業系統",
+            "projects": "專案"
+        },
+        "noData": "暫無資料。請在設定中檢查 API KEY 與連線。",
+        "panel": {
+            "breakdown": "細分",
+            "overview": "概覽"
+        },
+        "title": "WakaTime 狀態"
+    },
     "topBar": {
         "record": {
             "disabled": "WakaTime 記錄 🔴",
             "enabled": "WakaTime 記錄 🟢",
             "title": "WakaTime 記錄"
-        }
-    },
-    "status": {
-        "title": "WakaTime 狀態",
-        "panel": {
-            "overview": "概覽",
-            "breakdown": "細分"
-        },
-        "cachedAt": "快取於",
-        "noData": "暫無資料。請在設定中檢查 API KEY 與連線。",
-        "dimension": {
-            "languages": "程式語言",
-            "editors": "編輯器",
-            "projects": "專案",
-            "operating_systems": "作業系統",
-            "machines": "機器",
-            "categories": "活動類別",
-            "dependencies": "依賴"
         }
     }
 }
