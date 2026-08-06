@@ -1,0 +1,23 @@
+src/components/props.svelte.ts
+  s_5ea5ef2bf27b7d::t_91c6281e18bb3c 16-20,23-26
+src/types/wakatime.d.ts
+  s_5ea5ef2bf27b7d::t_91c6281e18bb3c 155-157,159-162,166-168,170-172,174-177,179-182,186-188,190-192,194-197,199-202,204-207,209-212,214-217,219-222,224-227,229-232,236-239,241-243,245-248,250-254,256-259,261-264,266-269,271-274,276-279,281-284,288-290,292-294,296-299,301-304,306-309,311-314,318-324,326-329,331-334,336-339,341-344
+src/index.ts
+  s_5ea5ef2bf27b7d::t_9d04d20c94fbe6 36,89-93
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.39-trip",
+  "base_commit_sha": "1f6e633eaa1be80c16576f0e58b41a710ccba9fb",
+  "prompts": {},
+  "sessions": {
+    "s_5ea5ef2bf27b7d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1bba0fae-01d0-4e5e-87fc-4b043c3d3abd",
+        "model": "claude-glm-5.2"
+      },
+      "human_author": "Yingyi / 颖逸 <49649786+Zuoqiu-Yingyi@users.noreply.github.com>"
+    }
+  }
+}
