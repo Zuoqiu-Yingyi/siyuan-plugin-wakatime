@@ -18,8 +18,8 @@
 <!-- 维度图表 -->
 
 <script lang="ts" module>
-    import type { Status } from "@/types/wakatime";
     import type WakaTimePlugin from "@/index";
+    import type { Status } from "@/types/wakatime";
 
     export interface IProps {
         categories: Status.Category[]; // 一个维度的分项数据
@@ -76,8 +76,8 @@
                         formatter: "{b} {d}%",
                     },
                     data: cats
-                        .filter(c => c.total_seconds > 0)
-                        .map(c => ({ name: c.name, value: c.total_seconds })),
+                        .filter((c) => c.total_seconds > 0)
+                        .map((c) => ({ name: c.name, value: c.total_seconds })),
                 },
             ],
         };
@@ -93,7 +93,9 @@
         node.setAttribute("data-subtype", "echarts");
         node.setAttribute("data-content", siyuanGlobal.Lute.EscapeHTMLStr(JSON.stringify(option)));
         node.innerHTML = "<div></div>";
+        // eslint-disable-next-line svelte/no-dom-manipulating
         container.innerHTML = "";
+        // eslint-disable-next-line svelte/no-dom-manipulating
         container.appendChild(node);
         plugin.siyuan.ProtyleMethod.chartRender(node);
     });
@@ -103,7 +105,7 @@
 {#if categories.length === 0}
     <div class="dimension-chart__empty">{i18n.status.noData}</div>
 {:else}
-    <div class="dimension-chart__container" bind:this={container}></div>
+    <div bind:this={container} class="dimension-chart__container"></div>
 {/if}
 
 <style lang="less">
