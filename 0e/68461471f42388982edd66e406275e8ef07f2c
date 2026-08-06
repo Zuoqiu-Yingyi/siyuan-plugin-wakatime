@@ -1,0 +1,22 @@
+src/components/DimensionChart.svelte
+  s_fa2c4144aa3ab7::t_a88d18d29ab33d 81-88,94-107,109-123,126,130-139,141-143
+  s_fa2c4144aa3ab7::t_a5ede7820526cc 108,124-125,129,140
+  s_fa2c4144aa3ab7::t_27e3eab6a28344 80
+  s_fa2c4144aa3ab7::t_d75c2f378e9626 127-128
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.39-trip",
+  "base_commit_sha": "0e68461471f42388982edd66e406275e8ef07f2c",
+  "prompts": {},
+  "sessions": {
+    "s_fa2c4144aa3ab7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2b5230b6-d128-410f-8240-610acb90462a",
+        "model": "claude-glm-5.2"
+      },
+      "human_author": "Yingyi / 颖逸 <49649786+Zuoqiu-Yingyi@users.noreply.github.com>"
+    }
+  }
+}
