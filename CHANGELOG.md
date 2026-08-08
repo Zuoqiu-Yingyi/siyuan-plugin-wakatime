@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.4.2](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/compare/v0.4.1...v0.4.2) (2026-08-08)
+
+
+### Miscellaneous
+
+* release v0.4.2 ([816f1f2](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/816f1f206da5bec40cd2822e61ddb39f4151b85d))
+* **release:** bump version to 0.4.2 in package.json, plugin.json, and release-please-config.json ([029da45](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/029da45d14859289a38bc4cfd0f4f212b1ce78c9))
+
+
+### Bug Fixes
+
+* **kernel:** handle errors when reading directory and return empty array ([c51e7be](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/commit/c51e7bef8df06ad2b31a14428011716c920bb8ef))
+
 ## [0.4.1](https://github.com/Zuoqiu-Yingyi/siyuan-plugin-wakatime/compare/v0.4.0...v0.4.1) (2026-08-06)
 
 
