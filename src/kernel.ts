@@ -148,8 +148,14 @@ class KernelWakaTime {
             return content;
         },
         readDir: async (path) => {
-            const entries = await this.siyuan.storage.list(path);
-            return entries.map((e) => ({ name: e.name, isDir: e.isDir }));
+            try {
+                const entries = await this.siyuan.storage.list(path);
+                return entries.map((e) => ({ name: e.name, isDir: e.isDir }));
+            }
+            catch (error) {
+                void error;
+                return [];
+            }
         },
         removeFile: async (path) => {
             await this.siyuan.storage.remove(path);
