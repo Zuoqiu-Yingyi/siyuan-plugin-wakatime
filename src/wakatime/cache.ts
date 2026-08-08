@@ -111,16 +111,10 @@ export class WakaTimeCache<T extends object = TCacheData> implements TCache<T> {
      * @returns 文件路径列表
      */
     public async getAllCacheFileName(directory: string = this.directory): Promise<string[]> {
-        try {
-            const files = await this.backend.readDir(directory);
-            return files
-                .filter((file) => file.isDir === false)
-                .map((file) => file.name);
-        }
-        catch (error) {
-            void error;
-            return [];
-        }
+        const files = await this.backend.readDir(directory);
+        return files
+            .filter((file) => file.isDir === false)
+            .map((file) => file.name);
     }
 
     /**
